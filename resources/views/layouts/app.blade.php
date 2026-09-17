@@ -78,10 +78,10 @@
 
                     @auth
                     <nav class="hidden md:flex space-x-1 ml-6 pl-6 border-l border-slate-800">
-                        <a href="#" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-colors">
+                        <a href="{{ route('activities.index') }}" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-colors">
                             กิจกรรม
                         </a>
-                        <a href="#" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-colors">
+                        <a href="{{ route('activities.create') }}" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-colors">
                             สร้างโพสต์
                         </a>
                         <a href="#" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-colors">
@@ -89,6 +89,7 @@
                         </a>
                         
                         @if(Auth::user()->isAdmin())
+                        <a href="{{ route('admin.categories.index') }}" class="px-3 py-2 rounded-lg text-sm text-slate-300 hover:text-white">หมวดหมู่</a>
                         <a href="{{ route('admin.users.index') }}" class="px-3 py-2 rounded-lg text-sm font-medium bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-600 hover:text-white transition-all flex items-center gap-1.5">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                             จัดการผู้ใช้งาน (Admin)
@@ -137,6 +138,13 @@
         </div>
     </header>
 
+    @auth
+    <nav class="md:hidden flex flex-wrap gap-4 px-4 py-3 bg-white border-b text-sm text-blue-600" aria-label="เมนูกิจกรรม">
+        <a href="{{ route('activities.index') }}">กิจกรรม</a>
+        <a href="{{ route('activities.create') }}">สร้างโพสต์</a>
+        @if(Auth::user()->isAdmin())<a href="{{ route('admin.categories.index') }}">จัดการหมวดหมู่</a>@endif
+    </nav>
+    @endauth
     <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
         @if(session('success'))
             <div class="mb-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-start gap-3 shadow-sm">

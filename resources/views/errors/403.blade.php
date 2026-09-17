@@ -13,11 +13,11 @@
     </span>
 
     <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight sm:text-4xl">
-        ไม่มีสิทธิ์เข้าถึงหน้าผู้ดูแลระบบ
+        คุณไม่มีสิทธิ์ดำเนินการนี้
     </h1>
     
     <p class="mt-3 text-base text-slate-600 max-w-md">
-        หน้านี้อนุญาตเฉพาะบัญชีผู้ดูแลระบบ <span class="font-semibold text-slate-800">(Admin)</span> เท่านั้น สมาชิกทั่วไปประเภทนักศึกษา <span class="font-semibold text-slate-800">(Student)</span> ไม่สามารถเข้าถึงได้
+        กรุณาตรวจสอบสิทธิ์ของบัญชี การแก้ไขและยกเลิกกิจกรรมอนุญาตเฉพาะเจ้าของโพสต์ ส่วนหน้าจัดการระบบอนุญาตเฉพาะผู้ดูแลระบบ
     </p>
 
     <div class="mt-8 flex flex-col sm:flex-row gap-3">
