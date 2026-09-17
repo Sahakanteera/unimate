@@ -116,7 +116,7 @@
 
 2. **สร้างไฟล์ `.env` และคีย์ระบบ**:
    ```bash
-   cp .env.example .env
+   copy .env.example .env
    php artisan key:generate
    ```
 
