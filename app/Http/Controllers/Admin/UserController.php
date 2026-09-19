@@ -4,12 +4,14 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class UserController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $search = $request->query('search');
         $statusFilter = $request->query('status');
@@ -46,7 +48,7 @@ class UserController extends Controller
         return view('admin.users.index', compact('users', 'stats', 'search', 'statusFilter', 'roleFilter'));
     }
 
-    public function toggleStatus(User $user)
+    public function toggleStatus(User $user): RedirectResponse
     {
         if ($user->id === Auth::id()) {
             return back()->with('error', '❌ คุณไม่สามารถระงับบัญชีของตัวเองได้');
