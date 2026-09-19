@@ -45,8 +45,8 @@ class ParticipationController extends Controller
             ->delete();
 
         $participant = new ActivityParticipant($request->only('message'));
-        $participant->activity_id = $activity->id;
-        $participant->user_id = $request->user()->id;
+        $participant->activity()->associate($activity);
+        $participant->user()->associate($request->user());
         $participant->status = 'pending';
         $participant->save();
 
@@ -94,7 +94,7 @@ class ParticipationController extends Controller
 
         // นับแต่ละสถานะสำหรับแท็บ
         $counts = $activity->participants()
-            ->selectRaw("status, count(*) as total")
+            ->selectRaw('status, count(*) as total')
             ->groupBy('status')
             ->pluck('total', 'status');
 

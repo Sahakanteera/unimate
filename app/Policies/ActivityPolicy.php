@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\Activity;
 use App\Models\User;
+use Illuminate\Support\Carbon;
 
 class ActivityPolicy
 {
@@ -24,7 +25,7 @@ class ActivityPolicy
         // ไม่ใช่เจ้าของ + กิจกรรม published + ยังไม่หมดเวลา
         return $user->id !== $activity->user_id
             && $activity->status === 'published'
-            && $activity->starts_at->isFuture();
+            && Carbon::parse($activity->starts_at)->isFuture();
     }
 
     public function manageRequests(User $user, Activity $activity): bool

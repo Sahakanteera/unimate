@@ -45,7 +45,7 @@ class AuthController extends Controller
             }
 
             return redirect()->intended(route('profile.edit'))
-                ->with('success', 'เข้าสู่ระบบสำเร็จ ยินดีต้อนรับคุณ ' . $user->name);
+                ->with('success', 'เข้าสู่ระบบสำเร็จ ยินดีต้อนรับคุณ '.$user->name);
         }
 
         throw ValidationException::withMessages([
