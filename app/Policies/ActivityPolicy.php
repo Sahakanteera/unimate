@@ -18,4 +18,18 @@ class ActivityPolicy
         // การยกเลิกใช้เงื่อนไขเดียวกับการแก้ไข เพื่อให้สิทธิ์ทั้งสองทางตรงกัน
         return $this->update($user, $activity);
     }
+
+    public function join(User $user, Activity $activity): bool
+    {
+        // ไม่ใช่เจ้าของ + กิจกรรม published + ยังไม่หมดเวลา
+        return $user->id !== $activity->user_id
+            && $activity->status === 'published'
+            && $activity->starts_at->isFuture();
+    }
+
+    public function manageRequests(User $user, Activity $activity): bool
+    {
+        // เฉพาะเจ้าของกิจกรรมเท่านั้นที่ดู/อนุมัติ/ปฏิเสธคำขอได้
+        return $user->id === $activity->user_id;
+    }
 }

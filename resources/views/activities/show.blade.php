@@ -12,20 +12,102 @@
             <div><dt class="text-slate-500">เวลาเริ่ม (เวลาไทย)</dt><dd>{{ $activity->starts_at->format('d/m/Y H:i') }}</dd></div>
             <div><dt class="text-slate-500">เวลาสิ้นสุด (เวลาไทย)</dt><dd>{{ $activity->ends_at->format('d/m/Y H:i') }}</dd></div>
             <div><dt class="text-slate-500">สถานที่</dt><dd class="break-words">{{ $activity->location }}</dd></div>
-            <div><dt class="text-slate-500">จำนวนคนที่รับ (ไม่รวมผู้ประกาศ)</dt><dd>{{ $activity->capacity }} คน</dd></div>
+            <div>
+                <dt class="text-slate-500">จำนวนผู้เข้าร่วม (ไม่รวมผู้ประกาศ)</dt>
+                <dd class="font-semibold">{{ $activity->approvedCount() }} / {{ $activity->capacity }} คน</dd>
+                @php $pct = $activity->capacity > 0 ? min(100, round($activity->approvedCount() / $activity->capacity * 100)) : 0; @endphp
+                <div class="mt-2 w-full bg-slate-200 rounded-full h-2.5">
+                    <div class="h-2.5 rounded-full {{ $pct >= 100 ? 'bg-rose-500' : 'bg-emerald-500' }}" style="width: {{ $pct }}%"></div>
+                </div>
+                <p class="text-xs mt-1 {{ $activity->isFull() ? 'text-rose-600' : 'text-slate-500' }}">
+                    {{ $activity->isFull() ? 'เต็มแล้ว' : 'ว่าง '.$activity->remainingSlots().' ที่' }}
+                </p>
+            </div>
         </dl>
         <h2 class="font-semibold text-xl mb-3">รายละเอียดกิจกรรม</h2>
         <p class="whitespace-pre-wrap break-words leading-relaxed">{{ $activity->description }}</p>
+
+        {{-- ส่วนที่ 3: ปุ่มขอเข้าร่วม / ถอนคำขอ / ถอนตัว --}}
+        @if($activity->status === 'published' && $activity->starts_at->isFuture())
+            @if(Auth::id() !== $activity->user_id)
+                @if($myParticipation && in_array($myParticipation->status, ['pending', 'approved']))
+                    {{-- ผู้ใช้มีคำขอ active อยู่แล้ว --}}
+                    <div class="mt-8 border-t pt-6">
+                        <div class="flex items-center gap-3 mb-3">
+                            @if($myParticipation->isPending())
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-amber-50 text-amber-700 border border-amber-200">รอการอนุมัติ</span>
+                            @else
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">เข้าร่วมแล้ว</span>
+                            @endif
+                        </div>
+                        <form method="POST" action="{{ route('activities.cancel-request', $activity) }}" onsubmit="return confirm('{{ $myParticipation->isApproved() ? 'ยืนยันถอนตัวจากกิจกรรม?' : 'ยืนยันถอนคำขอเข้าร่วม?' }}')">
+                            @csrf @method('PATCH')
+                            <button class="bg-rose-50 text-rose-700 border border-rose-200 rounded-xl px-5 py-3 hover:bg-rose-100 transition-colors">
+                                {{ $myParticipation->isApproved() ? 'ถอนตัวจากกิจกรรม' : 'ถอนคำขอเข้าร่วม' }}
+                            </button>
+                        </form>
+                    </div>
+                @elseif(! $activity->isFull())
+                    {{-- ฟอร์มส่งคำขอเข้าร่วม --}}
+                    <div class="mt-8 border-t pt-6">
+                        <h3 class="font-semibold text-lg mb-3">ขอเข้าร่วมกิจกรรม</h3>
+                        <form method="POST" action="{{ route('activities.join', $activity) }}">
+                            @csrf
+                            <label class="block mb-4">
+                                <span class="text-sm text-slate-600">ข้อความถึงผู้จัด (ไม่บังคับ)</span>
+                                <textarea name="message" rows="2" maxlength="500" placeholder="เช่น อยากร่วมด้วยครับ เล่นบาสได้" class="block w-full border rounded-xl p-3 mt-1">{{ old('message') }}</textarea>
+                            </label>
+                            <button class="bg-blue-600 text-white rounded-xl px-6 py-3 hover:bg-blue-700 transition-colors">ส่งคำขอเข้าร่วม</button>
+                        </form>
+                    </div>
+                @else
+                    <p class="mt-8 pt-5 border-t text-sm text-rose-600 font-medium">กิจกรรมนี้เต็มแล้ว ไม่สามารถส่งคำขอได้</p>
+                @endif
+            @endif
+        @endif
+
+        {{-- รายชื่อสมาชิก (approved) --}}
+        @if($approvedMembers->isNotEmpty())
+        <div class="mt-8 border-t pt-6">
+            <h3 class="font-semibold text-lg mb-4">สมาชิกที่เข้าร่วม ({{ $approvedMembers->count() }})</h3>
+            <div class="space-y-3">
+                @foreach($approvedMembers as $member)
+                <div class="flex items-center gap-3 bg-slate-50 rounded-xl p-3">
+                    <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm overflow-hidden flex-shrink-0">
+                        @if($member->user->avatar && Storage::disk('public')->exists($member->user->avatar))
+                            <img src="{{ asset('storage/' . $member->user->avatar) }}" alt="{{ $member->user->name }}" class="w-full h-full object-cover">
+                        @else
+                            {{ $member->user->initials() }}
+                        @endif
+                    </div>
+                    <div>
+                        <p class="font-medium text-sm">{{ $member->user->name }}</p>
+                        <p class="text-xs text-slate-500">เข้าร่วมเมื่อ {{ $member->updated_at->format('d/m/Y H:i') }}</p>
+                    </div>
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
+
         {{-- ซ่อนปุ่มตาม Policy; ฝั่ง Controller/FormRequest ยังตรวจสิทธิ์ทุกคำขอด้วย --}}
         @can('update', $activity)
             @if($activity->status !== 'cancelled')
             <div class="flex flex-wrap gap-4 mt-8 border-t pt-6">
                 <a href="{{ route('activities.edit', $activity) }}" class="bg-blue-600 text-white rounded-xl px-5 py-3">แก้ไขกิจกรรม</a>
+                <a href="{{ route('activities.requests', $activity) }}" class="bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-xl px-5 py-3 hover:bg-indigo-100 transition-colors">
+                    จัดการคำขอ
+                    @if($pendingCount > 0)
+                        <span class="ml-1 inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-500 text-white text-xs font-bold">{{ $pendingCount }}</span>
+                    @endif
+                </a>
                 <form method="POST" action="{{ route('activities.cancel', $activity) }}" onsubmit="return confirm('ยืนยันยกเลิกกิจกรรม? เมื่อยกเลิกแล้วจะไม่สามารถแก้ไขได้')">@csrf @method('PATCH')<button class="bg-rose-50 text-rose-700 rounded-xl px-5 py-3">ยกเลิกกิจกรรม</button></form>
             </div>
             @endif
         @else
-            <p class="mt-8 pt-5 border-t text-sm text-slate-500">เฉพาะเจ้าของโพสต์เท่านั้นที่แก้ไขหรือยกเลิกกิจกรรมนี้ได้</p>
+            @if(!($activity->status === 'published' && $activity->starts_at->isFuture() && Auth::id() !== $activity->user_id))
+                <p class="mt-8 pt-5 border-t text-sm text-slate-500">เฉพาะเจ้าของโพสต์เท่านั้นที่แก้ไขหรือยกเลิกกิจกรรมนี้ได้</p>
+            @endif
         @endcan
     </article>
 </div>

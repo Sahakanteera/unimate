@@ -84,7 +84,7 @@
                         <a href="{{ route('activities.create') }}" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-colors">
                             สร้างโพสต์
                         </a>
-                        <a href="#" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-colors">
+                        <a href="{{ route('my-activities.index') }}" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-colors">
                             นัดของฉัน
                         </a>
                         
@@ -142,6 +142,7 @@
     <nav class="md:hidden flex flex-wrap gap-4 px-4 py-3 bg-white border-b text-sm text-blue-600" aria-label="เมนูกิจกรรม">
         <a href="{{ route('activities.index') }}">กิจกรรม</a>
         <a href="{{ route('activities.create') }}">สร้างโพสต์</a>
+        <a href="{{ route('my-activities.index') }}">นัดของฉัน</a>
         @if(Auth::user()->isAdmin())<a href="{{ route('admin.categories.index') }}">จัดการหมวดหมู่</a>@endif
     </nav>
     @endauth

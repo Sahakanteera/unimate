@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Activity extends Model
 {
@@ -26,5 +27,32 @@ class Activity extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+
+    /** @return HasMany<ActivityParticipant, $this> */
+    public function participants(): HasMany
+    {
+        return $this->hasMany(ActivityParticipant::class);
+    }
+
+    /** @return HasMany<ActivityParticipant, $this> */
+    public function approvedParticipants(): HasMany
+    {
+        return $this->hasMany(ActivityParticipant::class)->where('status', 'approved');
+    }
+
+    public function approvedCount(): int
+    {
+        return $this->approvedParticipants()->count();
+    }
+
+    public function isFull(): bool
+    {
+        return $this->approvedCount() >= $this->capacity;
+    }
+
+    public function remainingSlots(): int
+    {
+        return max(0, $this->capacity - $this->approvedCount());
     }
 }

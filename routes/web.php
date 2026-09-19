@@ -4,6 +4,8 @@ use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\MyActivityController;
+use App\Http\Controllers\ParticipationController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -37,6 +39,17 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
+
+    // ส่วนที่ 3: ระบบขอเข้าร่วมและจัดการกลุ่ม
+    Route::get('/my-activities', [MyActivityController::class, 'index'])->name('my-activities.index');
+
+    Route::prefix('activities/{activity}')->group(function () {
+        Route::post('/join', [ParticipationController::class, 'store'])->name('activities.join');
+        Route::patch('/cancel-request', [ParticipationController::class, 'cancel'])->name('activities.cancel-request');
+        Route::get('/requests', [ParticipationController::class, 'requests'])->name('activities.requests');
+        Route::patch('/requests/{participant}/approve', [ParticipationController::class, 'approve'])->name('activities.requests.approve');
+        Route::patch('/requests/{participant}/reject', [ParticipationController::class, 'reject'])->name('activities.requests.reject');
+    });
 });
 
 Route::middleware(['auth', 'active', 'admin'])->prefix('admin')->name('admin.')->group(function () {

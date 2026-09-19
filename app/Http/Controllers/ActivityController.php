@@ -22,7 +22,9 @@ class ActivityController extends Controller
             'status' => ['nullable', 'in:published,cancelled,all'],
         ]);
         // ดึงเจ้าของและหมวดหมู่ล่วงหน้า ลด query ซ้ำเมื่อแสดงการ์ดกิจกรรมแต่ละใบ
-        $query = Activity::with(['user', 'category'])->orderBy('starts_at')->orderBy('id');
+        $query = Activity::with(['user', 'category'])
+            ->withCount(['approvedParticipants as approved_participants_count'])
+            ->orderBy('starts_at')->orderBy('id');
         $status = $filters['status'] ?? 'published';
         if ($status !== 'all') {
             $query->where('status', $status);
@@ -64,9 +66,21 @@ class ActivityController extends Controller
         return redirect()->route('activities.show', $activity)->with('success', 'ประกาศกิจกรรมเรียบร้อยแล้ว');
     }
 
-    public function show(Activity $activity): View
+    public function show(Request $request, Activity $activity): View
     {
-        return view('activities.show', ['activity' => $activity->load(['user', 'category'])]);
+        $activity->load(['user', 'category']);
+
+        // ส่วนที่ 3: ข้อมูลการเข้าร่วมสำหรับหน้ารายละเอียด
+        $myParticipation = $activity->participants()
+            ->where('user_id', $request->user()->id)
+            ->whereIn('status', ['pending', 'approved'])
+            ->first();
+
+        $approvedMembers = $activity->approvedParticipants()->with('user')->get();
+
+        $pendingCount = $activity->participants()->where('status', 'pending')->count();
+
+        return view('activities.show', compact('activity', 'myParticipation', 'approvedMembers', 'pendingCount'));
     }
 
     public function edit(Activity $activity): View
