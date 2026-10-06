@@ -11,7 +11,7 @@ class AttendanceController extends Controller
 {
     public function index()
     {
-        $attendances = Attendance::latest()->get();
+        $attendances = \App\Models\Attendance::latest()->get();
         $notifications = auth()->check() ? auth()->user()->notifications : collect();
 
         return view('attendance.index', compact('attendances', 'notifications'));
@@ -22,10 +22,9 @@ class AttendanceController extends Controller
         $request->validate([
             'student_id' => [
                 'required',
-                'string',
                 'min:9',
                 'max:13',
-                'regex:/^[0-9\-]+$/',
+                'regex:/^[0-9-]+$/',
             ],
         ], [
             'student_id.required' => 'กรุณากรอกรหัสนักศึกษา',
@@ -40,12 +39,12 @@ class AttendanceController extends Controller
             $attendance->save();
 
             if (auth()->check()) {
-                auth()->user()->notify(new ActivityNotification('เช็กชื่อเข้ากิจกรรมด้วยรหัส '.$request->student_id.' สำเร็จ'));
+                auth()->user()->notify(new ActivityNotification('เช็กชื่อเข้ากิจกรรมด้วยรหัส ' . $request->student_id . ' สำเร็จ'));
             }
 
             return redirect()->back()->with('success', 'บันทึกการเช็กชื่อและส่งแจ้งเตือนสำเร็จ!');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'ระบบฐานข้อมูลขัดข้อง: '.$e->getMessage());
+            return redirect()->back()->with('error', 'ระบบฐานข้อมูลขัดข้อง: ' . $e->getMessage());
         }
     }
 }
