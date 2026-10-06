@@ -2,23 +2,24 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class ProfileController extends Controller
 {
-    public function edit()
+    public function edit(): View
     {
         $user = Auth::user();
 
         return view('profile.edit', compact('user'));
     }
 
-    public function update(Request $request)
+    public function update(Request $request): RedirectResponse
     {
         $user = Auth::user();
 
@@ -51,7 +52,7 @@ class ProfileController extends Controller
 
         if ($request->filled('avatar_data')) {
             $imageData = $request->input('avatar_data');
-            
+
             if (preg_match('/^data:image\/(\w+);base64,/', $imageData, $type)) {
                 $data = substr($imageData, strpos($imageData, ',') + 1);
                 $data = base64_decode($data);
@@ -61,7 +62,7 @@ class ProfileController extends Controller
                         Storage::disk('public')->delete($user->avatar);
                     }
 
-                    $filename = 'avatars/avatar_' . $user->id . '_' . time() . '.png';
+                    $filename = 'avatars/avatar_'.$user->id.'_'.time().'.png';
                     Storage::disk('public')->put($filename, $data);
                     $user->avatar = $filename;
                 }

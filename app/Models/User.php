@@ -2,13 +2,15 @@
 
 namespace App\Models;
 
+use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Str;
 
 class User extends Authenticatable
 {
+    /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
     protected $fillable = [
@@ -58,8 +60,21 @@ class User extends Authenticatable
     public function initials(): string
     {
         $words = explode(' ', trim($this->name));
-        $first = mb_substr($words[0] ?? '', 0, 1, 'UTF-8');
+        $first = mb_substr($words[0], 0, 1, 'UTF-8');
         $last = isset($words[1]) ? mb_substr($words[1], 0, 1, 'UTF-8') : '';
-        return strtoupper($first . $last);
+
+        return strtoupper($first.$last);
+    }
+
+    /** @return HasMany<Activity, $this> */
+    public function activities(): HasMany
+    {
+        return $this->hasMany(Activity::class);
+    }
+
+    /** @return HasMany<ActivityParticipant, $this> */
+    public function participations(): HasMany
+    {
+        return $this->hasMany(ActivityParticipant::class);
     }
 }
