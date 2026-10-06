@@ -7,7 +7,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ActivityParticipant extends Model
 {
-    protected $fillable = ['message'];
+    protected $fillable = [
+    'message',
+    'status',
+    'attendance',
+];
 
     /** @return BelongsTo<Activity, $this> */
     public function activity(): BelongsTo

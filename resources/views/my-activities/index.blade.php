@@ -51,6 +51,16 @@
                         <span class="bg-amber-50 text-amber-700 rounded-full px-3 py-1">รออนุมัติ</span>
                     @elseif($participation->isApproved())
                         <span class="bg-emerald-50 text-emerald-700 rounded-full px-3 py-1">เข้าร่วมแล้ว</span>
+                        
+                        {{-- แสดงสถานะการเช็กชื่อของผู้จัด --}}
+                        @if($participation->attendance === 'present')
+                            <span class="bg-emerald-100 text-emerald-800 rounded-full px-3 py-1 font-medium">มาแล้ว</span>
+                        @elseif($participation->attendance === 'absent')
+                            <span class="bg-rose-100 text-rose-800 rounded-full px-3 py-1 font-medium">ขาด</span>
+                        @else
+                            <span class="bg-slate-100 text-slate-600 rounded-full px-3 py-1">รอเช็กชื่อ</span>
+                        @endif
+
                     @elseif($participation->isRejected())
                         <span class="bg-rose-50 text-rose-700 rounded-full px-3 py-1">ถูกปฏิเสธ</span>
                     @else

@@ -102,11 +102,21 @@
                     @endauth
                 </div>
 
-                <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-3">
                     @auth
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold {{ Auth::user()->isAdmin() ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-blue-500/20 text-blue-300 border border-blue-500/40' }}">
                             {{ Auth::user()->isAdmin() ? '👑 ผู้ดูแลระบบ' : '🎓 นักศึกษา' }}
                         </span>
+
+                        {{-- ปุ่มกระดิ่งแจ้งเตือนพร้อม Badge นับจำนวน --}}
+                        <a href="{{ route('notifications.index') }}" class="relative p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors flex items-center" title="การแจ้งเตือน">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                            @if(auth()->user()->unreadNotifications->count() > 0)
+                                <span class="absolute top-1 right-1 bg-rose-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                                    {{ auth()->user()->unreadNotifications->count() }}
+                                </span>
+                            @endif
+                        </a>
 
                         <a href="{{ route('profile.edit') }}" class="flex items-center space-x-2 text-slate-200 hover:text-white transition-colors">
                             <div class="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-sm ring-2 ring-blue-400/30 overflow-hidden">
@@ -150,18 +160,25 @@
         @if(Auth::user()->isAdmin())<a href="{{ route('admin.categories.index') }}">จัดการหมวดหมู่</a>@endif
     </nav>
     @endauth
+
     <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
         @if(session('success'))
-            <div class="mb-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-start gap-3 shadow-sm">
-                <svg class="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                <div class="text-sm font-medium">{{ session('success') }}</div>
+            <div id="flash-success" class="mb-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-start justify-between gap-3 shadow-sm transition-opacity duration-500">
+                <div class="flex items-start gap-3">
+                    <svg class="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <div class="text-sm font-medium">{{ session('success') }}</div>
+                </div>
+                <button onclick="document.getElementById('flash-success').style.display='none'" class="text-emerald-600 hover:text-emerald-800 text-sm font-bold">✕</button>
             </div>
         @endif
 
         @if(session('error'))
-            <div class="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 flex items-start gap-3 shadow-sm">
-                <svg class="w-5 h-5 text-rose-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                <div class="text-sm font-medium">{{ session('error') }}</div>
+            <div id="flash-error" class="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 flex items-start justify-between gap-3 shadow-sm transition-opacity duration-500">
+                <div class="flex items-start gap-3">
+                    <svg class="w-5 h-5 text-rose-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <div class="text-sm font-medium">{{ session('error') }}</div>
+                </div>
+                <button onclick="document.getElementById('flash-error').style.display='none'" class="text-rose-600 hover:text-rose-800 text-sm font-bold">✕</button>
             </div>
         @endif
 
@@ -173,6 +190,16 @@
             &copy; 2026 UniMate - ระบบจับกลุ่มหาเพื่อนร่วมทำกิจกรรมในมหาวิทยาลัย
         </div>
     </footer>
+
+    <script>
+        // ตั้งเวลาให้กล่องข้อความแจ้งเตือนหายไปเองอัตโนมัติหลัง 4 วินาที
+        setTimeout(() => {
+            const successBox = document.getElementById('flash-success');
+            if (successBox) successBox.style.display = 'none';
+            const errorBox = document.getElementById('flash-error');
+            if (errorBox) errorBox.style.display = 'none';
+        }, 4000);
+    </script>
 
     @yield('scripts')
 </body>

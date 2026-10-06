@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\MyActivityController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ParticipationController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Auth;
@@ -42,12 +43,17 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     Route::get('/my-activities', [MyActivityController::class, 'index'])->name('my-activities.index');
 
+    // ระบบแจ้งเตือน (Notifications)
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/mark-as-read', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
+
     Route::prefix('activities/{activity}')->group(function () {
         Route::post('/join', [ParticipationController::class, 'store'])->name('activities.join');
         Route::patch('/cancel-request', [ParticipationController::class, 'cancel'])->name('activities.cancel-request');
         Route::get('/requests', [ParticipationController::class, 'requests'])->name('activities.requests');
         Route::patch('/requests/{participant}/approve', [ParticipationController::class, 'approve'])->name('activities.requests.approve');
         Route::patch('/requests/{participant}/reject', [ParticipationController::class, 'reject'])->name('activities.requests.reject');
+        Route::patch('/requests/{participant}/attendance', [ParticipationController::class, 'updateAttendance'])->name('activities.requests.attendance');
     });
 });
 

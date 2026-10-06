@@ -15,7 +15,7 @@
                     'pending'  => ['label' => 'รออนุมัติ',  'color' => 'amber'],
                     'approved' => ['label' => 'อนุมัติแล้ว', 'color' => 'emerald'],
                     'rejected' => ['label' => 'ปฏิเสธแล้ว', 'color' => 'rose'],
-                    'all'      => ['label' => 'ทั้งหมด',     'color' => 'slate'],
+                    'all'      => ['label' => 'ทั้งหมด',    'color' => 'slate'],
                 ];
             @endphp
             @foreach($tabs as $key => $tab)
@@ -61,23 +61,40 @@
                 <p class="text-xs text-slate-400 mt-1">ส่งคำขอเมื่อ {{ $p->created_at->format('d/m/Y H:i') }}</p>
             </div>
 
-            {{-- ปุ่มอนุมัติ/ปฏิเสธ (เฉพาะ pending) --}}
-            @if($p->isPending())
-            <div class="flex gap-2 flex-shrink-0">
-                @if(! $activity->isFull())
-                <form method="POST" action="{{ route('activities.requests.approve', [$activity, $p]) }}">
-                    @csrf @method('PATCH')
-                    <button class="bg-emerald-600 text-white text-sm rounded-xl px-4 py-2 hover:bg-emerald-700 transition-colors">อนุมัติ</button>
-                </form>
-                @else
-                <span class="text-xs text-rose-500 self-center">เต็มแล้ว</span>
+            {{-- ปุ่มจัดการ (แบ่งตามสถานะ) --}}
+            <div class="flex gap-2 flex-shrink-0 items-center">
+                {{-- กรณีสถานะเป็น pending: แสดงปุ่ม ออนุมัติ / ปฏิเสธ --}}
+                @if($p->isPending())
+                    @if(! $activity->isFull())
+                    <form method="POST" action="{{ route('activities.requests.approve', [$activity, $p]) }}">
+                        @csrf @method('PATCH')
+                        <button class="bg-emerald-600 text-white text-sm rounded-xl px-4 py-2 hover:bg-emerald-700 transition-colors">อนุมัติ</button>
+                    </form>
+                    @else
+                    <span class="text-xs text-rose-500 self-center">เต็มแล้ว</span>
+                    @endif
+                    <form method="POST" action="{{ route('activities.requests.reject', [$activity, $p]) }}" onsubmit="return confirm('ยืนยันปฏิเสธคำขอของ {{ $p->user->name }}?')">
+                        @csrf @method('PATCH')
+                        <button class="bg-rose-50 text-rose-700 border border-rose-200 text-sm rounded-xl px-4 py-2 hover:bg-rose-100 transition-colors">ปฏิเสธ</button>
+                    </form>
                 @endif
-                <form method="POST" action="{{ route('activities.requests.reject', [$activity, $p]) }}" onsubmit="return confirm('ยืนยันปฏิเสธคำขอของ {{ $p->user->name }}?')">
-                    @csrf @method('PATCH')
-                    <button class="bg-rose-50 text-rose-700 border border-rose-200 text-sm rounded-xl px-4 py-2 hover:bg-rose-100 transition-colors">ปฏิเสธ</button>
-                </form>
+
+                {{-- กรณีสถานะเป็น approved: แสดงปุ่มเช็กชื่อ มา / ขาด --}}
+                @if($p->isApproved())
+                    <form action="{{ route('activities.requests.attendance', [$activity->id, $p->id]) }}" method="POST" class="flex gap-2">
+                        @csrf
+                        @method('PATCH')
+                        <button type="submit" name="attendance" value="present" 
+                                class="text-xs font-medium px-3 py-2 rounded-xl border transition-colors {{ $p->attendance === 'present' ? 'bg-emerald-600 text-white border-emerald-600' : 'text-emerald-700 border-emerald-300 bg-emerald-50 hover:bg-emerald-100' }}">
+                            มา
+                        </button>
+                        <button type="submit" name="attendance" value="absent" 
+                                class="text-xs font-medium px-3 py-2 rounded-xl border transition-colors {{ $p->attendance === 'absent' ? 'bg-rose-600 text-white border-rose-600' : 'text-rose-700 border-rose-300 bg-rose-50 hover:bg-rose-100' }}">
+                            ขาด
+                        </button>
+                    </form>
+                @endif
             </div>
-            @endif
         </div>
         @empty
         <div class="border border-dashed rounded-2xl p-12 text-center text-slate-500">

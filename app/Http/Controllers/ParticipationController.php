@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Activity;
 use App\Models\ActivityParticipant;
+use App\Notifications\ActivityNotification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -132,6 +133,9 @@ class ParticipationController extends Controller
             return back()->with('error', 'กิจกรรมเต็มแล้ว ไม่สามารถอนุมัติเพิ่มได้');
         }
 
+        // ส่งการแจ้งเตือนว่าได้รับอนุมัติ
+        $participant->user->notify(new ActivityNotification("คำขอเข้าร่วมกิจกรรม '{$activity->title}' ของคุณได้รับการอนุมัติแล้ว!"));
+
         return back()->with('success', 'อนุมัติคำขอของ '.$participant->user->name.' เรียบร้อยแล้ว');
     }
 
@@ -151,6 +155,28 @@ class ParticipationController extends Controller
         $participant->status = 'rejected';
         $participant->save();
 
+        // ส่งการแจ้งเตือนว่าถูกปฏิเสธ
+        $participant->user->notify(new ActivityNotification("คำขอเข้าร่วมกิจกรรม '{$activity->title}' ของคุณไม่ได้รับการอนุมัติ"));
+
         return back()->with('success', 'ปฏิเสธคำขอของ '.$participant->user->name.' เรียบร้อยแล้ว');
+    }
+
+   public function updateAttendance(Request $request, Activity $activity, ActivityParticipant $participant): RedirectResponse
+    {
+        Gate::authorize('manageRequests', $activity);
+
+        if ($participant->activity_id !== $activity->id) {
+            abort(404);
+        }
+
+        $request->validate([
+            'attendance' => ['required', 'in:present,absent'],
+        ]);
+
+        // กำหนดค่าตรงๆ แล้วเซฟ (ข้ามการเช็ก fillable ป้องกันปัญหาตัวอักษรซ่อน)
+        $participant->attendance = $request->attendance;
+        $participant->save();
+
+        return back()->with('success', 'บันทึกการเช็กชื่อเรียบร้อยแล้ว');
     }
 }
