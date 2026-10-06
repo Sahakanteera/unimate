@@ -11,8 +11,6 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
-use App\Http\Controllers\AttendanceController;
-
 Route::get('/', function () {
     if (Auth::check()) {
         $user = Auth::user();
