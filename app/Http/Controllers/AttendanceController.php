@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Attendance;
 use App\Notifications\ActivityNotification;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 
 class AttendanceController extends Controller
 {
@@ -39,12 +38,12 @@ class AttendanceController extends Controller
             $attendance->save();
 
             if (auth()->check()) {
-                auth()->user()->notify(new ActivityNotification('เช็กชื่อเข้ากิจกรรมด้วยรหัส ' . $request->student_id . ' สำเร็จ'));
+                auth()->user()->notify(new ActivityNotification('เช็กชื่อเข้ากิจกรรมด้วยรหัส '.$request->student_id.' สำเร็จ'));
             }
 
             return redirect()->back()->with('success', 'บันทึกการเช็กชื่อและส่งแจ้งเตือนสำเร็จ!');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'ระบบฐานข้อมูลขัดข้อง: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'ระบบฐานข้อมูลขัดข้อง: '.$e->getMessage());
         }
     }
 }

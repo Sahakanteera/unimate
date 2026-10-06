@@ -33,7 +33,6 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware(['auth', 'active'])->group(function () {
-    // ส่วนที่ 2: ใช้การยกเลิกผ่าน PATCH แทน route destroy เพื่อเก็บประวัติกิจกรรม
     Route::resource('activities', ActivityController::class)->except('destroy');
     Route::patch('/activities/{activity}/cancel', [ActivityController::class, 'cancel'])->name('activities.cancel');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
@@ -41,7 +40,6 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
 
-    // ส่วนที่ 3: ระบบขอเข้าร่วมและจัดการกลุ่ม
     Route::get('/my-activities', [MyActivityController::class, 'index'])->name('my-activities.index');
 
     Route::prefix('activities/{activity}')->group(function () {
