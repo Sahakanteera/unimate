@@ -5,10 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\Attendance;
 use App\Notifications\ActivityNotification;
 use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\View\View;
 
 class AttendanceController extends Controller
 {
-    public function index()
+    public function index(): View
     {
         $attendances = Attendance::latest()->get();
         $notifications = auth()->check() ? auth()->user()->notifications : collect();
@@ -16,7 +18,7 @@ class AttendanceController extends Controller
         return view('attendance.index', compact('attendances', 'notifications'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
         $request->validate([
             'student_id' => [
