@@ -3,14 +3,13 @@
 use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\MyActivityController;
 use App\Http\Controllers\ParticipationController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
-
-use App\Http\Controllers\AttendanceController;
 
 Route::get('/', function () {
     if (Auth::check()) {
@@ -34,7 +33,6 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware(['auth', 'active'])->group(function () {
-    // ส่วนที่ 2: ใช้การยกเลิกผ่าน PATCH แทน route destroy เพื่อเก็บประวัติกิจกรรม
     Route::resource('activities', ActivityController::class)->except('destroy');
     Route::patch('/activities/{activity}/cancel', [ActivityController::class, 'cancel'])->name('activities.cancel');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
@@ -42,7 +40,6 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
 
-    // ส่วนที่ 3: ระบบขอเข้าร่วมและจัดการกลุ่ม
     Route::get('/my-activities', [MyActivityController::class, 'index'])->name('my-activities.index');
 
     Route::prefix('activities/{activity}')->group(function () {
@@ -59,8 +56,6 @@ Route::middleware(['auth', 'active', 'admin'])->prefix('admin')->name('admin.')-
     Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
     Route::post('/users/{user}/toggle-status', [AdminUserController::class, 'toggleStatus'])->name('users.toggle-status');
 });
-
-
 
 Route::get('/attendance', [AttendanceController::class, 'index'])->name('attendance.index');
 Route::post('/attendance/check', [AttendanceController::class, 'store'])->name('attendance.store');
