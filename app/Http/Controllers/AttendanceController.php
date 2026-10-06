@@ -11,7 +11,7 @@ class AttendanceController extends Controller
 {
     public function index()
     {
-        $attendances = \App\Models\Attendance::latest()->get();
+        $attendances = Attendance::latest()->get();
         $notifications = auth()->check() ? auth()->user()->notifications : collect();
 
         return view('attendance.index', compact('attendances', 'notifications'));
@@ -34,7 +34,7 @@ class AttendanceController extends Controller
         ]);
 
         try {
-            $attendance = new Attendance();
+            $attendance = new Attendance;
             $attendance->student_id = $request->student_id;
             $attendance->save();
 
