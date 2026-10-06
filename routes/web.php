@@ -3,14 +3,13 @@
 use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\MyActivityController;
 use App\Http\Controllers\ParticipationController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
-
-use App\Http\Controllers\AttendanceController;
 
 Route::get('/', function () {
     if (Auth::check()) {

@@ -3,20 +3,20 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 class ActivityNotification extends Notification
 {
     use Queueable;
 
+    public $message;
+
     /**
      * Create a new notification instance.
      */
-    public function __construct()
+    public function __construct($message)
     {
-        //
+        $this->message = $message;
     }
 
     /**
@@ -26,18 +26,8 @@ class ActivityNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['mail'];
-    }
-
-    /**
-     * Get the mail representation of the notification.
-     */
-    public function toMail(object $notifiable): MailMessage
-    {
-        return (new MailMessage)
-            ->line('The introduction to the notification.')
-            ->action('Notification Action', url('/'))
-            ->line('Thank you for using our application!');
+        // เปลี่ยนจาก 'mail' เป็น 'database' เพื่อให้แจ้งเตือนแสดงในเว็บ
+        return ['database'];
     }
 
     /**
@@ -47,8 +37,9 @@ class ActivityNotification extends Notification
      */
     public function toArray(object $notifiable): array
     {
+        // บันทึกข้อความลงฐานข้อมูล
         return [
-            //
+            'message' => $this->message,
         ];
     }
 }
