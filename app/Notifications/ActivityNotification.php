@@ -17,7 +17,6 @@ class ActivityNotification extends Notification
     }
 
     /**
-     * @param object $notifiable
      * @return array<int, string>
      */
     public function via(object $notifiable): array
@@ -26,7 +25,6 @@ class ActivityNotification extends Notification
     }
 
     /**
-     * @param object $notifiable
      * @return array<string, mixed>
      */
     public function toArray(object $notifiable): array
