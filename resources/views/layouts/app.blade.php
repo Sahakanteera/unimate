@@ -87,6 +87,9 @@
                         <a href="{{ route('my-activities.index') }}" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-colors">
                             นัดของฉัน
                         </a>
+                        <a href="{{ route('attendance.index') }}" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-colors">
+                            เช็กชื่อเข้ากิจกรรม
+                        </a>
                         
                         @if(Auth::user()->isAdmin())
                         <a href="{{ route('admin.categories.index') }}" class="px-3 py-2 rounded-lg text-sm text-slate-300 hover:text-white">หมวดหมู่</a>
@@ -143,6 +146,7 @@
         <a href="{{ route('activities.index') }}">กิจกรรม</a>
         <a href="{{ route('activities.create') }}">สร้างโพสต์</a>
         <a href="{{ route('my-activities.index') }}">นัดของฉัน</a>
+        <a href="{{ route('attendance.index') }}">เช็กชื่อ</a>
         @if(Auth::user()->isAdmin())<a href="{{ route('admin.categories.index') }}">จัดการหมวดหมู่</a>@endif
     </nav>
     @endauth
