@@ -4,7 +4,6 @@ use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
-use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\MyActivityController;
 use App\Http\Controllers\NotificationController;
@@ -74,6 +73,3 @@ Route::middleware(['auth', 'active', 'admin'])->prefix('admin')->name('admin.')-
     Route::patch('/reports/{report}/resolve', [AdminReportController::class, 'resolve'])->name('reports.resolve');
     Route::patch('/activities/{activity}/unhide', [AdminReportController::class, 'unhide'])->name('activities.unhide');
 });
-
-Route::get('/attendance', [AttendanceController::class, 'index'])->name('attendance.index');
-Route::post('/attendance/check', [AttendanceController::class, 'store'])->name('attendance.store');

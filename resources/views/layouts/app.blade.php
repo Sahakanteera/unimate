@@ -79,11 +79,11 @@
                     @auth
                     @php
                         // เมนูหลัก: [route, ชื่อ, pattern สำหรับไฮไลต์หน้าปัจจุบัน]
+                        // การเช็กชื่อทำในหน้า "จัดการคำขอ" ของผู้จัด จึงไม่มีเมนูแยก
                         $mainNav = [
                             ['activities.index', 'กิจกรรม', ['activities.index', 'activities.show']],
                             ['activities.create', 'สร้างโพสต์', ['activities.create']],
                             ['my-activities.index', 'นัดของฉัน', ['my-activities.*', 'activities.requests']],
-                            ['attendance.index', 'เช็กชื่อ', ['attendance.*']],
                         ];
                         $navLink = fn (array $patterns) => 'px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors '
                             .(request()->routeIs(...$patterns) ? 'bg-slate-800 text-white' : 'text-slate-300 hover:text-white hover:bg-slate-800');
@@ -170,7 +170,6 @@
         <a href="{{ route('activities.index') }}">กิจกรรม</a>
         <a href="{{ route('activities.create') }}">สร้างโพสต์</a>
         <a href="{{ route('my-activities.index') }}">นัดของฉัน</a>
-        <a href="{{ route('attendance.index') }}">เช็กชื่อ</a>
         @if(Auth::user()->isAdmin())
             <a href="{{ route('admin.users.index') }}" class="text-indigo-600">จัดการผู้ใช้งาน</a>
             <a href="{{ route('admin.categories.index') }}" class="text-indigo-600">จัดการหมวดหมู่</a>

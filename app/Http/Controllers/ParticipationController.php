@@ -169,11 +169,15 @@ class ParticipationController extends Controller
             abort(404);
         }
 
+        // เพิ่มการตรวจสอบตรงนี้: ห้ามเช็กชื่อคนที่ยังไม่ผ่านการอนุมัติ!
+        if (! $participant->isApproved()) {
+            return back()->with('error', 'ไม่สามารถเช็กชื่อได้ เนื่องจากผู้ใช้นี้ยังไม่ได้รับอนุมัติให้เข้าร่วมกิจกรรม');
+        }
+
         $request->validate([
             'attendance' => ['required', 'in:present,absent'],
         ]);
 
-        // กำหนดค่าตรงๆ แล้วเซฟ (ข้ามการเช็ก fillable ป้องกันปัญหาตัวอักษรซ่อน)
         $participant->attendance = $request->attendance;
         $participant->save();
 
