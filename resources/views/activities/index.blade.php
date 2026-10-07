@@ -21,7 +21,7 @@
         <div class="flex flex-wrap gap-2 text-sm mb-3"><span class="bg-blue-50 text-blue-700 rounded-full px-3 py-1">{{ $activity->category->name }}</span><span class="rounded-full px-3 py-1 {{ $activity->status === 'cancelled' ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-700' }}">{{ $activity->status === 'cancelled' ? 'ยกเลิกแล้ว' : 'ประกาศแล้ว' }}</span></div>
         <h2 class="text-xl font-semibold break-words"><a href="{{ route('activities.show', $activity) }}" class="hover:text-blue-600">{{ $activity->title }}</a></h2>
         <p class="text-slate-500 mt-2 break-words">{{ Str::limit($activity->description, 120) }}</p>
-        <div class="space-y-2 mt-5 text-sm"><p>วันเริ่ม: {{ $activity->starts_at->format('d/m/Y H:i') }}</p><p class="break-words">สถานที่: {{ $activity->location }}</p><p>ผู้เข้าร่วม: {{ $activity->approved_participants_count ?? $activity->approvedCount() }}/{{ $activity->capacity }} คน</p><p>ผู้ประกาศ: {{ $activity->user->name }}</p></div>
+        <div class="space-y-2 mt-5 text-sm"><p>วันเริ่ม: {{ $activity->starts_at->format('d/m/Y H:i') }}</p><p class="break-words">สถานที่: {{ $activity->location }}</p><p>ผู้เข้าร่วม: {{ $activity->approved_participants_count ?? $activity->approvedCount() }}/{{ $activity->capacity }} คน</p><p>ผู้ประกาศ: {{ $activity->user->name }}</p>@if($activity->reviews_count > 0)<p class="text-amber-500">★ {{ number_format($activity->reviews_avg_rating, 1) }} <span class="text-slate-500">({{ $activity->reviews_count }} รีวิว)</span></p>@endif</div>
         <a href="{{ route('activities.show', $activity) }}" class="inline-block mt-5 text-blue-600 font-medium">ดูรายละเอียด →</a>
     </article>
 @empty

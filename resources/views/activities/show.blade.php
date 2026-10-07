@@ -5,9 +5,18 @@
     <a href="{{ route('activities.index') }}" class="text-blue-600">← กลับหน้ากิจกรรม</a>
     <article class="mt-5 bg-white border rounded-2xl p-6 sm:p-8">
         @if($activity->status === 'cancelled')<div role="status" class="bg-rose-50 text-rose-700 border border-rose-200 rounded-xl p-4 mb-5">กิจกรรมนี้ถูกยกเลิกแล้ว</div>@endif
+        @if($activity->isHidden())<div role="status" class="bg-slate-800 text-white rounded-xl p-4 mb-5">กิจกรรมนี้ถูกซ่อนโดยผู้ดูแลระบบ ผู้ใช้อื่นจะมองไม่เห็น<br><span class="text-sm text-slate-300">เหตุผล: {{ $activity->hidden_reason }}</span></div>@endif
         <p class="text-blue-600 mb-2">{{ $activity->category->name }}</p>
         <h1 class="text-3xl font-bold break-words">{{ $activity->title }}</h1>
         <p class="text-slate-500 mt-3">ประกาศโดย {{ $activity->user->name }} · อัปเดต {{ $activity->updated_at->format('d/m/Y H:i') }}</p>
+        <p class="mt-2 text-sm">
+            @if($reviews->isNotEmpty())
+                <span class="text-amber-500 font-semibold">★ {{ number_format($reviews->avg('rating'), 1) }}</span>
+                <span class="text-slate-500">จาก {{ $reviews->count() }} รีวิว</span>
+            @else
+                <span class="text-slate-400">ยังไม่มีรีวิว</span>
+            @endif
+        </p>
         <dl class="grid sm:grid-cols-2 gap-5 bg-slate-50 rounded-xl p-5 my-6">
             <div><dt class="text-slate-500">เวลาเริ่ม (เวลาไทย)</dt><dd>{{ $activity->starts_at->format('d/m/Y H:i') }}</dd></div>
             <div><dt class="text-slate-500">เวลาสิ้นสุด (เวลาไทย)</dt><dd>{{ $activity->ends_at->format('d/m/Y H:i') }}</dd></div>
@@ -88,6 +97,74 @@
                 @endforeach
             </div>
         </div>
+        @endif
+
+        {{-- ส่วนที่ 5: รีวิวกิจกรรม --}}
+        <div class="mt-8 border-t pt-6">
+            <h3 class="font-semibold text-lg mb-4">รีวิวจากผู้เข้าร่วม ({{ $reviews->count() }})</h3>
+
+            @if($reviewBlockReason === null)
+                <form method="POST" action="{{ route('activities.reviews.store', $activity) }}" class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-5">
+                    @csrf
+                    <p class="font-medium mb-2">ให้คะแนนกิจกรรมนี้</p>
+                    <div class="flex flex-wrap gap-2 mb-3">
+                        @for($i = 5; $i >= 1; $i--)
+                            <label class="cursor-pointer">
+                                <input type="radio" name="rating" value="{{ $i }}" class="peer sr-only" @checked(old('rating') == $i) required>
+                                <span class="inline-block px-3 py-1.5 rounded-lg border bg-white peer-checked:bg-amber-500 peer-checked:text-white peer-checked:border-amber-500">{{ str_repeat('★', $i) }}</span>
+                            </label>
+                        @endfor
+                    </div>
+                    @error('rating')<p class="text-sm text-rose-600 mb-2">{{ $message }}</p>@enderror
+                    <textarea name="comment" rows="2" maxlength="1000" placeholder="ความคิดเห็นเพิ่มเติม (ไม่บังคับ)" class="block w-full border rounded-xl p-3 bg-white">{{ old('comment') }}</textarea>
+                    <button class="mt-3 bg-amber-500 text-white rounded-xl px-5 py-2 hover:bg-amber-600 transition-colors">ส่งรีวิว</button>
+                </form>
+            @elseif($activity->isEnded() && Auth::id() !== $activity->user_id)
+                <p class="text-sm text-slate-500 bg-slate-50 rounded-xl p-3 mb-5">{{ $reviewBlockReason }}</p>
+            @endif
+
+            <div class="space-y-3">
+                @forelse($reviews as $review)
+                    <div class="bg-slate-50 rounded-xl p-4">
+                        <div class="flex justify-between items-center">
+                            <p class="font-medium text-sm">{{ $review->user->name }}</p>
+                            <p class="text-amber-500 text-sm">{{ str_repeat('★', $review->rating) }}<span class="text-slate-300">{{ str_repeat('★', 5 - $review->rating) }}</span></p>
+                        </div>
+                        @if($review->comment)<p class="text-sm text-slate-700 mt-2 whitespace-pre-wrap break-words">{{ $review->comment }}</p>@endif
+                        <p class="text-xs text-slate-400 mt-1">{{ $review->created_at->format('d/m/Y H:i') }}</p>
+                    </div>
+                @empty
+                    <p class="text-sm text-slate-400">{{ $activity->isEnded() ? 'ยังไม่มีรีวิว' : 'รีวิวได้หลังกิจกรรมจบ' }}</p>
+                @endforelse
+            </div>
+        </div>
+
+        {{-- ส่วนที่ 5: รายงานกิจกรรมหรือผู้ใช้ (ไม่แสดงให้เจ้าของกิจกรรม) --}}
+        @if(Auth::id() !== $activity->user_id)
+        <details class="mt-8 border-t pt-6 group" @if($errors->has('reason') || $errors->has('target')) open @endif>
+            <summary class="cursor-pointer text-sm text-rose-600 hover:text-rose-700 font-medium">🚩 รายงานปัญหา</summary>
+            <form method="POST" action="{{ route('activities.reports.store', $activity) }}" class="mt-4 bg-rose-50 border border-rose-200 rounded-xl p-4 space-y-3">
+                @csrf
+                <label class="block">
+                    <span class="text-sm text-slate-600">ต้องการรายงาน</span>
+                    <select name="target" class="block w-full border rounded-xl p-2 mt-1 bg-white">
+                        <option value="activity">กิจกรรมนี้</option>
+                        <option value="user:{{ $activity->user_id }}">ผู้ประกาศ: {{ $activity->user->name }}</option>
+                        @foreach($approvedMembers as $member)
+                            @if($member->user_id !== Auth::id())
+                                <option value="user:{{ $member->user_id }}">สมาชิก: {{ $member->user->name }}</option>
+                            @endif
+                        @endforeach
+                    </select>
+                </label>
+                <label class="block">
+                    <span class="text-sm text-slate-600">เหตุผล</span>
+                    <textarea name="reason" rows="3" maxlength="1000" required placeholder="อธิบายปัญหาที่พบ เช่น เนื้อหาไม่เหมาะสม หรือไม่มาตามนัด" class="block w-full border rounded-xl p-3 mt-1 bg-white">{{ old('reason') }}</textarea>
+                </label>
+                @error('reason')<p class="text-sm text-rose-600">{{ $message }}</p>@enderror
+                <button class="bg-rose-600 text-white rounded-xl px-5 py-2 hover:bg-rose-700 transition-colors">ส่งรายงาน</button>
+            </form>
+        </details>
         @endif
 
         {{-- ซ่อนปุ่มตาม Policy; ฝั่ง Controller/FormRequest ยังตรวจสิทธิ์ทุกคำขอด้วย --}}

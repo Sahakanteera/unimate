@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 class Activity extends Model
 {
@@ -14,7 +15,51 @@ class Activity extends Model
 
     protected function casts(): array
     {
-        return ['starts_at' => 'datetime', 'ends_at' => 'datetime', 'capacity' => 'integer'];
+        return ['starts_at' => 'datetime', 'ends_at' => 'datetime', 'capacity' => 'integer', 'hidden_at' => 'datetime'];
+    }
+
+    /** @return HasMany<Review, $this> */
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    public function isEnded(): bool
+    {
+        // ใช้ Carbon::parse แบบเดียวกับ ActivityPolicy เพราะ PHPStan อ่านชนิดคอลัมน์จาก migration เป็น string
+        return Carbon::parse($this->ends_at)->isPast();
+    }
+
+    public function isHidden(): bool
+    {
+        return $this->hidden_at !== null;
+    }
+
+    /**
+     * ส่วนที่ 5: คืนเหตุผลที่ผู้ใช้รีวิวกิจกรรมนี้ไม่ได้ หรือ null ถ้ารีวิวได้
+     * ใช้ร่วมกันทั้ง Controller (ข้อความ error) และหน้าเว็บ (ซ่อน/แสดงฟอร์ม)
+     */
+    public function reviewBlockReason(User $user): ?string
+    {
+        if ($user->id === $this->user_id) {
+            return 'ผู้จัดไม่สามารถรีวิวกิจกรรมของตัวเองได้';
+        }
+        if (! $this->isEnded()) {
+            return 'รีวิวได้หลังกิจกรรมจบแล้วเท่านั้น';
+        }
+        $attended = $this->participants()
+            ->where('user_id', $user->id)
+            ->where('status', 'approved')
+            ->where('attendance', 'present')
+            ->exists();
+        if (! $attended) {
+            return 'เฉพาะผู้ที่ได้รับการเช็กชื่อว่ามาเข้าร่วมจริงเท่านั้นที่รีวิวได้';
+        }
+        if ($this->reviews()->where('user_id', $user->id)->exists()) {
+            return 'คุณรีวิวกิจกรรมนี้ไปแล้ว';
+        }
+
+        return null;
     }
 
     /** @return BelongsTo<User, $this> */

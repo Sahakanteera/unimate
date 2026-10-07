@@ -77,37 +77,47 @@
                     </a>
 
                     @auth
-                    <nav class="hidden md:flex space-x-1 ml-6 pl-6 border-l border-slate-800">
-                        <a href="{{ route('activities.index') }}" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-colors">
-                            กิจกรรม
-                        </a>
-                        <a href="{{ route('activities.create') }}" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-colors">
-                            สร้างโพสต์
-                        </a>
-                        <a href="{{ route('my-activities.index') }}" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-colors">
-                            นัดของฉัน
-                        </a>
-                        <a href="{{ route('attendance.index') }}" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-colors">
-                            เช็กชื่อเข้ากิจกรรม
-                        </a>
-                        
+                    @php
+                        // เมนูหลัก: [route, ชื่อ, pattern สำหรับไฮไลต์หน้าปัจจุบัน]
+                        $mainNav = [
+                            ['activities.index', 'กิจกรรม', ['activities.index', 'activities.show']],
+                            ['activities.create', 'สร้างโพสต์', ['activities.create']],
+                            ['my-activities.index', 'นัดของฉัน', ['my-activities.*', 'activities.requests']],
+                            ['attendance.index', 'เช็กชื่อ', ['attendance.*']],
+                        ];
+                        $navLink = fn (array $patterns) => 'px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors '
+                            .(request()->routeIs(...$patterns) ? 'bg-slate-800 text-white' : 'text-slate-300 hover:text-white hover:bg-slate-800');
+                        $pendingReports = Auth::user()->isAdmin() ? \App\Models\Report::where('status', 'pending')->count() : 0;
+                    @endphp
+                    <nav class="hidden lg:flex items-center gap-1 ml-4 pl-4 border-l border-slate-800">
+                        @foreach($mainNav as [$route, $label, $patterns])
+                            <a href="{{ route($route) }}" class="{{ $navLink($patterns) }}">{{ $label }}</a>
+                        @endforeach
+
+                        {{-- รวมเมนู Admin เป็น dropdown เดียว เพื่อไม่ให้แถบเมนูยาวเกิน --}}
                         @if(Auth::user()->isAdmin())
-                        <a href="{{ route('admin.categories.index') }}" class="px-3 py-2 rounded-lg text-sm text-slate-300 hover:text-white">หมวดหมู่</a>
-                        <a href="{{ route('admin.users.index') }}" class="px-3 py-2 rounded-lg text-sm font-medium bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-600 hover:text-white transition-all flex items-center gap-1.5">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-                            จัดการผู้ใช้งาน (Admin)
-                        </a>
+                        <details class="relative" data-nav-dropdown>
+                            <summary class="list-none cursor-pointer select-none flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors {{ request()->routeIs('admin.*') ? 'bg-indigo-600 text-white' : 'bg-indigo-600/20 text-indigo-200 border border-indigo-500/30 hover:bg-indigo-600 hover:text-white' }}">
+                                ผู้ดูแลระบบ
+                                @if($pendingReports > 0)<span class="bg-rose-500 text-white text-[10px] font-bold rounded-full px-1.5 leading-4">{{ $pendingReports }}</span>@endif
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </summary>
+                            <div class="absolute left-0 mt-2 w-56 bg-white text-slate-700 rounded-xl shadow-xl border py-2 z-50">
+                                <a href="{{ route('admin.users.index') }}" class="block px-4 py-2 text-sm hover:bg-slate-50 {{ request()->routeIs('admin.users.*') ? 'font-semibold text-indigo-600' : '' }}">จัดการผู้ใช้งาน</a>
+                                <a href="{{ route('admin.categories.index') }}" class="block px-4 py-2 text-sm hover:bg-slate-50 {{ request()->routeIs('admin.categories.*') ? 'font-semibold text-indigo-600' : '' }}">จัดการหมวดหมู่</a>
+                                <a href="{{ route('admin.reports.index') }}" class="flex items-center justify-between px-4 py-2 text-sm hover:bg-slate-50 {{ request()->routeIs('admin.reports.*') ? 'font-semibold text-indigo-600' : '' }}">
+                                    ตรวจรายงาน
+                                    @if($pendingReports > 0)<span class="bg-rose-500 text-white text-[10px] font-bold rounded-full px-1.5 leading-4">{{ $pendingReports }}</span>@endif
+                                </a>
+                            </div>
+                        </details>
                         @endif
                     </nav>
                     @endauth
                 </div>
 
-                <div class="flex items-center space-x-3">
+                <div class="flex items-center gap-2 sm:gap-3">
                     @auth
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold {{ Auth::user()->isAdmin() ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-blue-500/20 text-blue-300 border border-blue-500/40' }}">
-                            {{ Auth::user()->isAdmin() ? '👑 ผู้ดูแลระบบ' : '🎓 นักศึกษา' }}
-                        </span>
-
                         {{-- ปุ่มกระดิ่งแจ้งเตือนพร้อม Badge นับจำนวน --}}
                         <a href="{{ route('notifications.index') }}" class="relative p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors flex items-center" title="การแจ้งเตือน">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
@@ -126,9 +136,12 @@
                                     {{ Auth::user()->initials() }}
                                 @endif
                             </div>
-                            <div class="hidden sm:block text-left">
-                                <div class="text-sm font-semibold leading-none">{{ Auth::user()->name }}</div>
-                                <div class="text-xs text-slate-400 mt-1">{{ Auth::user()->student_id ?? Auth::user()->email }}</div>
+                            {{-- ชื่อยาวตัดด้วย ... และแสดงบทบาทใต้ชื่อแทนป้ายแยก เพื่อประหยัดพื้นที่ --}}
+                            <div class="hidden sm:block text-left min-w-0">
+                                <div class="text-sm font-semibold leading-tight truncate max-w-[10rem]" title="{{ Auth::user()->name }}">{{ Auth::user()->name }}</div>
+                                <div class="text-xs mt-0.5 whitespace-nowrap {{ Auth::user()->isAdmin() ? 'text-amber-300' : 'text-slate-400' }}">
+                                    {{ Auth::user()->isAdmin() ? '👑 ผู้ดูแลระบบ' : '🎓 '.(Auth::user()->student_id ?? 'นักศึกษา') }}
+                                </div>
                             </div>
                         </a>
 
@@ -152,12 +165,17 @@
     </header>
 
     @auth
-    <nav class="md:hidden flex flex-wrap gap-4 px-4 py-3 bg-white border-b text-sm text-blue-600" aria-label="เมนูกิจกรรม">
+    {{-- เมนูจอเล็ก: เลื่อนซ้าย-ขวาได้แทนการขึ้นบรรทัดใหม่ --}}
+    <nav class="lg:hidden flex gap-5 overflow-x-auto whitespace-nowrap px-4 py-3 bg-white border-b text-sm text-blue-600" aria-label="เมนูกิจกรรม">
         <a href="{{ route('activities.index') }}">กิจกรรม</a>
         <a href="{{ route('activities.create') }}">สร้างโพสต์</a>
         <a href="{{ route('my-activities.index') }}">นัดของฉัน</a>
         <a href="{{ route('attendance.index') }}">เช็กชื่อ</a>
-        @if(Auth::user()->isAdmin())<a href="{{ route('admin.categories.index') }}">จัดการหมวดหมู่</a>@endif
+        @if(Auth::user()->isAdmin())
+            <a href="{{ route('admin.users.index') }}" class="text-indigo-600">จัดการผู้ใช้งาน</a>
+            <a href="{{ route('admin.categories.index') }}" class="text-indigo-600">จัดการหมวดหมู่</a>
+            <a href="{{ route('admin.reports.index') }}" class="text-indigo-600">ตรวจรายงาน</a>
+        @endif
     </nav>
     @endauth
 
@@ -199,7 +217,15 @@
             const errorBox = document.getElementById('flash-error');
             if (errorBox) errorBox.style.display = 'none';
         }, 4000);
+
+        // ปิดเมนู dropdown ของ Admin เมื่อคลิกที่อื่น
+        document.addEventListener('click', (e) => {
+            document.querySelectorAll('details[data-nav-dropdown][open]').forEach((d) => {
+                if (!d.contains(e.target)) d.removeAttribute('open');
+            });
+        });
     </script>
+    <style>details[data-nav-dropdown] > summary::-webkit-details-marker { display: none; }</style>
 
     @yield('scripts')
 </body>

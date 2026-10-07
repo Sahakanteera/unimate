@@ -23,7 +23,9 @@ class ActivityController extends Controller
         ]);
         // ดึงเจ้าของและหมวดหมู่ล่วงหน้า ลด query ซ้ำเมื่อแสดงการ์ดกิจกรรมแต่ละใบ
         $query = Activity::with(['user', 'category'])
-            ->withCount(['approvedParticipants as approved_participants_count'])
+            ->withCount(['approvedParticipants as approved_participants_count', 'reviews'])
+            ->withAvg('reviews', 'rating')
+            ->whereNull('hidden_at') // ส่วนที่ 5: ไม่แสดงกิจกรรมที่ Admin ซ่อน
             ->orderBy('starts_at')->orderBy('id');
         $status = $filters['status'] ?? 'published';
         if ($status !== 'all') {
@@ -68,6 +70,9 @@ class ActivityController extends Controller
 
     public function show(Request $request, Activity $activity): View
     {
+        // ส่วนที่ 5: กิจกรรมที่ถูกซ่อน เห็นได้เฉพาะเจ้าของและ Admin
+        abort_if($activity->isHidden() && $request->user()->id !== $activity->user_id && ! $request->user()->isAdmin(), 404);
+
         $activity->load(['user', 'category']);
 
         // ส่วนที่ 3: ข้อมูลการเข้าร่วมสำหรับหน้ารายละเอียด
@@ -80,7 +85,11 @@ class ActivityController extends Controller
 
         $pendingCount = $activity->participants()->where('status', 'pending')->count();
 
-        return view('activities.show', compact('activity', 'myParticipation', 'approvedMembers', 'pendingCount'));
+        // ส่วนที่ 5: รีวิวและการรายงาน
+        $reviews = $activity->reviews()->with('user')->latest()->get();
+        $reviewBlockReason = $activity->reviewBlockReason($request->user());
+
+        return view('activities.show', compact('activity', 'myParticipation', 'approvedMembers', 'pendingCount', 'reviews', 'reviewBlockReason'));
     }
 
     public function edit(Activity $activity): View
