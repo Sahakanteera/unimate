@@ -46,7 +46,8 @@ class AuthController extends Controller
                     ->with('success', 'ยินดีต้อนรับ ผู้ดูแลระบบ (Admin)');
             }
 
-            return redirect()->intended(route('profile.edit'))
+            // นักศึกษาเข้ามาที่หน้ากิจกรรม (หน้าหลักของระบบ) แทนฟอร์มแก้โปรไฟล์
+            return redirect()->intended(route('activities.index'))
                 ->with('success', 'เข้าสู่ระบบสำเร็จ ยินดีต้อนรับคุณ '.$user->name);
         }
 

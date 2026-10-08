@@ -76,7 +76,7 @@
 
 #### 📂 3.4 Blade Views (หน้าจอระบบ)
 - `resources/views/layouts/app.blade.php`
-  - **อธิบาย**: Master Layout หลักของเว็บไซต์ พร้อม Top Navigation Bar สีเข้ม ธีมสีน้ำเงิน UniMate และ Flash Alert เตือนสำเร็จ/ผิดพลาด
+  - **อธิบาย**: Master Layout หลักของเว็บไซต์ (ธีมประยุกต์จาก fastwork.com ดู `docs/ui-design-th.md`) พร้อมแถบเมนูแคปซูลด้านบน เมนูล่างบนมือถือ และ Flash Alert แบบ toast เตือนสำเร็จ/ผิดพลาด
 - `resources/views/auth/login.blade.php`
   - **อธิบาย**: หน้าฟอร์มเข้าสู่ระบบ พร้อมปุ่มไอคอนรูปดวงตา (👁️) เปิด-ปิดดูรหัสผ่าน
 - `resources/views/auth/register.blade.php`

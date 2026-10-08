@@ -21,7 +21,7 @@ Route::get('/', function () {
             return redirect()->route('admin.users.index');
         }
 
-        return redirect()->route('profile.edit');
+        return redirect()->route('activities.index');
     }
 
     return redirect()->route('login');

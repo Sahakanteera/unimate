@@ -1,106 +1,112 @@
 @extends('layouts.app')
 @section('title', 'จัดการคำขอ — '.$activity->title.' | UniMate')
+
+@php
+    $approvedTotal = $activity->approvedCount();
+    $isFull = $approvedTotal >= $activity->capacity;
+    $tabs = [
+        'pending' => 'รออนุมัติ',
+        'approved' => 'อนุมัติแล้ว',
+        'rejected' => 'ปฏิเสธแล้ว',
+        'all' => 'ทั้งหมด',
+    ];
+@endphp
+
 @section('content')
-<div class="max-w-3xl mx-auto">
-    <a href="{{ route('activities.show', $activity) }}" class="text-blue-600">← กลับหน้ากิจกรรม</a>
+<div class="mx-auto max-w-4xl">
+    <a href="{{ route('activities.show', $activity) }}" class="btn btn-ghost btn-sm -ml-3"><x-ui.icon name="arrow-left" class="h-4 w-4" /> กลับหน้ากิจกรรม</a>
 
-    <div class="mt-5 bg-white border rounded-2xl p-6 sm:p-8">
-        <h1 class="text-2xl font-bold mb-1">จัดการคำขอเข้าร่วม</h1>
-        <p class="text-slate-500 mb-6">{{ $activity->title }} · ผู้เข้าร่วม {{ $activity->approvedCount() }}/{{ $activity->capacity }} คน</p>
+    <div class="mt-4">
+        <span class="kicker"><x-ui.icon name="clipboard" class="h-4 w-4" /> สำหรับผู้จัดกิจกรรม</span>
+        <h1 class="page-title mt-4">จัดการคำขอเข้าร่วม</h1>
+        <p class="mt-2 break-words text-ink-muted">{{ $activity->title }} · {{ $activity->starts_at->copy()->locale('th')->isoFormat('dd D MMM') }} {{ $activity->starts_at->format('H:i') }}</p>
+    </div>
 
+    <div class="mt-6 grid grid-cols-3 gap-3">
+        <div class="stat bg-white shadow-soft"><p class="stat-value">{{ $counts['pending'] ?? 0 }}</p><p class="stat-label">รออนุมัติ</p></div>
+        <div class="stat bg-white shadow-soft"><p class="stat-value">{{ $approvedTotal }}<span class="text-base text-ink-faint">/{{ $activity->capacity }}</span></p><p class="stat-label">ผู้เข้าร่วมแล้ว (คน)</p></div>
+        <div class="stat bg-white shadow-soft"><p class="stat-value {{ $isFull ? 'text-bad' : '' }}">{{ max(0, $activity->capacity - $approvedTotal) }}</p><p class="stat-label">{{ $isFull ? 'เต็มแล้ว' : 'ที่ว่างคงเหลือ' }}</p></div>
+    </div>
+
+    <div class="card mt-6 p-2 sm:p-3">
         {{-- แท็บกรองสถานะ --}}
-        <div class="flex flex-wrap gap-2 mb-6 border-b pb-4">
-            @php
-                $tabs = [
-                    'pending'  => ['label' => 'รออนุมัติ',  'color' => 'amber'],
-                    'approved' => ['label' => 'อนุมัติแล้ว', 'color' => 'emerald'],
-                    'rejected' => ['label' => 'ปฏิเสธแล้ว', 'color' => 'rose'],
-                    'all'      => ['label' => 'ทั้งหมด',    'color' => 'slate'],
-                ];
-            @endphp
-            @foreach($tabs as $key => $tab)
+        <nav class="tabs mx-3" aria-label="กรองตามสถานะคำขอ">
+            @foreach($tabs as $key => $label)
                 @php $count = $key === 'all' ? $counts->sum() : ($counts[$key] ?? 0); @endphp
-                <a href="{{ route('activities.requests', ['activity' => $activity, 'status' => $key]) }}"
-                   class="px-4 py-2 rounded-xl text-sm font-medium transition-colors {{ $statusFilter === $key ? 'bg-'.$tab['color'].'-600 text-white' : 'bg-'.$tab['color'].'-50 text-'.$tab['color'].'-700 hover:bg-'.$tab['color'].'-100' }}">
-                    {{ $tab['label'] }} ({{ $count }})
-                </a>
+                <a href="{{ route('activities.requests', ['activity' => $activity, 'status' => $key]) }}" @if($statusFilter === $key) aria-current="page" @endif
+                   class="tab {{ $statusFilter === $key ? 'tab-active' : '' }}">{{ $label }} <span class="tab-count">{{ $count }}</span></a>
             @endforeach
-        </div>
+        </nav>
 
-        @forelse($participants as $p)
-        <div class="flex items-start gap-4 p-4 rounded-xl {{ $loop->even ? 'bg-slate-50' : '' }} mb-2">
-            {{-- Avatar --}}
-            <div class="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm overflow-hidden flex-shrink-0">
-                @if($p->user->avatar && Storage::disk('public')->exists($p->user->avatar))
-                    <img src="{{ asset('storage/' . $p->user->avatar) }}" alt="{{ $p->user->name }}" class="w-full h-full object-cover">
-                @else
-                    {{ $p->user->initials() }}
-                @endif
-            </div>
+        <ul class="divide-y divide-line">
+            @forelse($participants as $p)
+                <li class="flex flex-col gap-4 px-3 py-5 sm:flex-row sm:items-start">
+                    <div class="flex min-w-0 flex-1 items-start gap-3.5">
+                        <x-ui.avatar :user="$p->user" size="lg" />
+                        <div class="min-w-0 flex-1">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <p class="font-medium text-ink">{{ $p->user->name }}</p>
+                                @if($p->user->student_id)
+                                    <span class="text-xs text-ink-muted">({{ $p->user->student_id }})</span>
+                                @endif
+                                @if($p->isPending())
+                                    <span class="chip chip-warn h-6 px-2.5 text-xs">รออนุมัติ</span>
+                                @elseif($p->isApproved())
+                                    <span class="chip chip-ok h-6 px-2.5 text-xs">อนุมัติแล้ว</span>
+                                @elseif($p->isRejected())
+                                    <span class="chip chip-bad h-6 px-2.5 text-xs">ปฏิเสธแล้ว</span>
+                                @else
+                                    <span class="chip h-6 px-2.5 text-xs">ถอนตัวแล้ว</span>
+                                @endif
+                            </div>
+                            @if($p->message)
+                                <p class="mt-2 inline-block max-w-full break-words rounded-2xl rounded-tl-md bg-canvas px-3.5 py-2 text-sm text-ink-soft"><span class="sr-only">ข้อความ: </span>{{ $p->message }}</p>
+                            @endif
+                            <p class="mt-1.5 text-xs text-ink-faint">ส่งคำขอเมื่อ {{ $p->created_at->format('d/m/Y H:i') }}</p>
+                        </div>
+                    </div>
 
-            {{-- ข้อมูลผู้ขอ --}}
-            <div class="flex-grow min-w-0">
-                <div class="flex items-center gap-2 flex-wrap">
-                    <p class="font-semibold">{{ $p->user->name }}</p>
-                    @if($p->user->student_id)
-                        <span class="text-xs text-slate-500">({{ $p->user->student_id }})</span>
-                    @endif
-                    @if($p->isPending())
-                        <span class="px-2 py-0.5 rounded-full text-xs bg-amber-100 text-amber-700">รออนุมัติ</span>
-                    @elseif($p->isApproved())
-                        <span class="px-2 py-0.5 rounded-full text-xs bg-emerald-100 text-emerald-700">อนุมัติแล้ว</span>
-                    @elseif($p->isRejected())
-                        <span class="px-2 py-0.5 rounded-full text-xs bg-rose-100 text-rose-700">ปฏิเสธแล้ว</span>
-                    @else
-                        <span class="px-2 py-0.5 rounded-full text-xs bg-slate-100 text-slate-600">ถอนตัวแล้ว</span>
-                    @endif
-                </div>
-                @if($p->message)
-                    <p class="text-sm text-slate-600 mt-1 break-words">ข้อความ: {{ $p->message }}</p>
-                @endif
-                <p class="text-xs text-slate-400 mt-1">ส่งคำขอเมื่อ {{ $p->created_at->format('d/m/Y H:i') }}</p>
-            </div>
+                    {{-- ปุ่มจัดการ (แบ่งตามสถานะ) --}}
+                    <div class="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end sm:pt-1">
+                        {{-- กรณีสถานะเป็น pending: แสดงปุ่ม อนุมัติ / ปฏิเสธ --}}
+                        @if($p->isPending())
+                            @if(! $isFull)
+                                <form method="POST" action="{{ route('activities.requests.approve', [$activity, $p]) }}">
+                                    @csrf @method('PATCH')
+                                    <button class="btn btn-success btn-sm"><x-ui.icon name="check" class="h-4 w-4" /> อนุมัติ</button>
+                                </form>
+                            @else
+                                <span class="chip chip-bad">เต็มแล้ว</span>
+                            @endif
+                            <form method="POST" action="{{ route('activities.requests.reject', [$activity, $p]) }}" onsubmit="return confirm('ยืนยันปฏิเสธคำขอของ {{ $p->user->name }}?')">
+                                @csrf @method('PATCH')
+                                <button class="btn btn-danger btn-sm">ปฏิเสธ</button>
+                            </form>
+                        @endif
 
-            {{-- ปุ่มจัดการ (แบ่งตามสถานะ) --}}
-            <div class="flex gap-2 flex-shrink-0 items-center">
-                {{-- กรณีสถานะเป็น pending: แสดงปุ่ม ออนุมัติ / ปฏิเสธ --}}
-                @if($p->isPending())
-                    @if(! $activity->isFull())
-                    <form method="POST" action="{{ route('activities.requests.approve', [$activity, $p]) }}">
-                        @csrf @method('PATCH')
-                        <button class="bg-emerald-600 text-white text-sm rounded-xl px-4 py-2 hover:bg-emerald-700 transition-colors">อนุมัติ</button>
-                    </form>
-                    @else
-                    <span class="text-xs text-rose-500 self-center">เต็มแล้ว</span>
-                    @endif
-                    <form method="POST" action="{{ route('activities.requests.reject', [$activity, $p]) }}" onsubmit="return confirm('ยืนยันปฏิเสธคำขอของ {{ $p->user->name }}?')">
-                        @csrf @method('PATCH')
-                        <button class="bg-rose-50 text-rose-700 border border-rose-200 text-sm rounded-xl px-4 py-2 hover:bg-rose-100 transition-colors">ปฏิเสธ</button>
-                    </form>
-                @endif
-
-                {{-- กรณีสถานะเป็น approved: แสดงปุ่มเช็กชื่อ มา / ขาด --}}
-                @if($p->isApproved())
-                    <form action="{{ route('activities.requests.attendance', [$activity->id, $p->id]) }}" method="POST" class="flex gap-2">
-                        @csrf
-                        @method('PATCH')
-                        <button type="submit" name="attendance" value="present" 
-                                class="text-xs font-medium px-3 py-2 rounded-xl border transition-colors {{ $p->attendance === 'present' ? 'bg-emerald-600 text-white border-emerald-600' : 'text-emerald-700 border-emerald-300 bg-emerald-50 hover:bg-emerald-100' }}">
-                            มา
-                        </button>
-                        <button type="submit" name="attendance" value="absent" 
-                                class="text-xs font-medium px-3 py-2 rounded-xl border transition-colors {{ $p->attendance === 'absent' ? 'bg-rose-600 text-white border-rose-600' : 'text-rose-700 border-rose-300 bg-rose-50 hover:bg-rose-100' }}">
-                            ขาด
-                        </button>
-                    </form>
-                @endif
-            </div>
-        </div>
-        @empty
-        <div class="border border-dashed rounded-2xl p-12 text-center text-slate-500">
-            ไม่มีคำขอในสถานะนี้
-        </div>
-        @endforelse
+                        {{-- กรณีสถานะเป็น approved: แสดงปุ่มเช็กชื่อ มา / ขาด แบบ segmented --}}
+                        @if($p->isApproved())
+                            <form action="{{ route('activities.requests.attendance', [$activity->id, $p->id]) }}" method="POST" class="flex items-center gap-2">
+                                @csrf
+                                @method('PATCH')
+                                <span class="text-xs text-ink-muted">เช็กชื่อ</span>
+                                <span class="inline-flex rounded-full bg-canvas p-1">
+                                    <button type="submit" name="attendance" value="present" aria-pressed="{{ $p->attendance === 'present' ? 'true' : 'false' }}"
+                                            class="h-8 rounded-full px-4 text-sm font-medium transition {{ $p->attendance === 'present' ? 'bg-ok text-white shadow-soft' : 'text-ink-muted hover:text-ok' }}">มา</button>
+                                    <button type="submit" name="attendance" value="absent" aria-pressed="{{ $p->attendance === 'absent' ? 'true' : 'false' }}"
+                                            class="h-8 rounded-full px-4 text-sm font-medium transition {{ $p->attendance === 'absent' ? 'bg-bad text-white shadow-soft' : 'text-ink-muted hover:text-bad' }}">ขาด</button>
+                                </span>
+                            </form>
+                        @endif
+                    </div>
+                </li>
+            @empty
+                <li class="flex flex-col items-center px-6 py-14 text-center">
+                    <span class="grid h-14 w-14 place-items-center rounded-2xl bg-canvas text-ink-muted"><x-ui.icon name="inbox" class="h-6 w-6" /></span>
+                    <p class="mt-4 text-ink-muted">ไม่มีคำขอในสถานะนี้</p>
+                </li>
+            @endforelse
+        </ul>
     </div>
 </div>
 @endsection

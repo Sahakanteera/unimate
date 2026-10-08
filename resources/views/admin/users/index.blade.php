@@ -3,193 +3,130 @@
 @section('title', 'จัดการสมาชิกและสิทธิ์ผู้ใช้ (Admin) - UniMate')
 
 @section('content')
-<div class="py-6 max-w-7xl mx-auto space-y-6">
+<div class="space-y-6">
+    @include('admin.partials.header', [
+        'title' => 'จัดการบัญชีสมาชิกและระงับสิทธิ์',
+        'description' => 'บริหารจัดการผู้ใช้งานในระบบ ตรวจสอบสถานะ และกดระงับบัญชีผู้กระทำผิดกฎ',
+    ])
 
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-            <div class="flex items-center gap-2">
-                <span class="px-3 py-1 bg-amber-100 text-amber-800 text-xs font-bold rounded-full border border-amber-200">
-                    👑 ADMIN PANEL
-                </span>
-                <h1 class="text-2xl font-bold text-slate-900">จัดการบัญชีสมาชิกและระงับสิทธิ์</h1>
+    <dl class="grid grid-cols-2 gap-3 md:grid-cols-4">
+        @foreach([
+            ['สมาชิกทั้งหมด', $stats['total'], 'text-ink', 'users', 'bg-tint-aqua'],
+            ['นักศึกษา (Students)', $stats['students'], 'text-ink', 'id-card', 'bg-tint-lilac'],
+            ['เปิดใช้งาน (Active)', $stats['active'], 'text-ok', 'check-circle', 'bg-tint-mint'],
+            ['ถูกระงับ (Suspended)', $stats['suspended'], 'text-bad', 'ban', 'bg-tint-coral'],
+        ] as [$label, $value, $color, $icon, $tint])
+            <div class="card flex items-center justify-between gap-3 p-5">
+                <div>
+                    <dt class="text-xs text-ink-muted">{{ $label }}</dt>
+                    <dd class="mt-1 text-3xl font-medium tracking-tight {{ $color }}">{{ $value }}</dd>
+                </div>
+                <span class="hidden h-11 w-11 shrink-0 place-items-center rounded-2xl text-ink sm:grid {{ $tint }}"><x-ui.icon :name="$icon" /></span>
             </div>
-            <p class="text-sm text-slate-600 mt-1">
-                บริหารจัดการผู้ใช้งานในระบบ ตรวจสอบสถานะ และกดระงับบัญชีผู้กระทำผิดกฎ
-            </p>
-        </div>
-    </div>
+        @endforeach
+    </dl>
 
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div class="bg-white p-5 rounded-2xl shadow-md shadow-slate-200/50 border border-slate-100 flex items-center justify-between">
-            <div>
-                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">สมาชิกทั้งหมด</p>
-                <p class="text-2xl font-extrabold text-slate-900 mt-1">{{ $stats['total'] }}</p>
-            </div>
-            <div class="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
-                👥
-            </div>
-        </div>
-
-        <div class="bg-white p-5 rounded-2xl shadow-md shadow-slate-200/50 border border-slate-100 flex items-center justify-between">
-            <div>
-                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">นักศึกษา (Students)</p>
-                <p class="text-2xl font-extrabold text-blue-600 mt-1">{{ $stats['students'] }}</p>
-            </div>
-            <div class="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
-                🎓
-            </div>
+    <form action="{{ route('admin.users.index') }}" method="GET" class="card flex flex-col gap-3 p-3 sm:flex-row sm:items-center" role="search">
+        <div class="flex flex-1 items-center gap-2 rounded-full bg-canvas pl-4 transition focus-within:ring-4 focus-within:ring-brand-600/15">
+            <x-ui.icon name="search" class="h-4 w-4 text-ink-faint" />
+            <label for="user-search" class="sr-only">ค้นหาสมาชิก</label>
+            <input id="user-search" type="text" name="search" value="{{ $search }}" placeholder="ค้นหาด้วยชื่อ, อีเมล หรือรหัสนักศึกษา..."
+                class="h-11 min-w-0 flex-1 bg-transparent pr-4 text-[15px] outline-none placeholder:text-ink-faint">
         </div>
 
-        <div class="bg-white p-5 rounded-2xl shadow-md shadow-slate-200/50 border border-slate-100 flex items-center justify-between">
-            <div>
-                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">เปิดใช้งาน (Active)</p>
-                <p class="text-2xl font-extrabold text-emerald-600 mt-1">{{ $stats['active'] }}</p>
-            </div>
-            <div class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
-                🟢
-            </div>
+        <label for="user-status" class="sr-only">สถานะบัญชี</label>
+        <select id="user-status" name="status" onchange="this.form.submit()" class="field h-11 w-full rounded-full sm:w-56">
+            <option value="">ทุกสถานะ (All Status)</option>
+            <option value="active" {{ $statusFilter === 'active' ? 'selected' : '' }}>เปิดใช้งานปกติ (Active)</option>
+            <option value="suspended" {{ $statusFilter === 'suspended' ? 'selected' : '' }}>ถูกระงับ (Suspended)</option>
+        </select>
+
+        <button type="submit" class="btn btn-primary">ค้นหา</button>
+        @if($search || $statusFilter)
+            <a href="{{ route('admin.users.index') }}" class="btn btn-ghost">ล้างตัวกรอง</a>
+        @endif
+    </form>
+
+    <section class="card overflow-hidden">
+        <div class="flex items-center justify-between border-b border-line px-6 py-4">
+            <h2 class="font-medium text-ink">รายชื่อสมาชิกทั้งหมดในระบบ</h2>
+            <span class="text-xs text-ink-muted">แสดง {{ $users->count() }} จาก {{ $users->total() }} บัญชี</span>
         </div>
 
-        <div class="bg-white p-5 rounded-2xl shadow-md shadow-slate-200/50 border border-slate-100 flex items-center justify-between">
-            <div>
-                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">ถูกระงับ (Suspended)</p>
-                <p class="text-2xl font-extrabold text-rose-600 mt-1">{{ $stats['suspended'] }}</p>
-            </div>
-            <div class="w-11 h-11 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center font-bold">
-                🚫
-            </div>
-        </div>
-    </div>
-
-    <div class="bg-white p-4 rounded-2xl shadow-md shadow-slate-200/50 border border-slate-100">
-        <form action="{{ route('admin.users.index') }}" method="GET" class="flex flex-col sm:flex-row gap-3">
-            <div class="flex-grow">
-                <input type="text" name="search" value="{{ $search }}" placeholder="ค้นหาด้วยชื่อ, อีเมล หรือรหัสนักศึกษา..."
-                    class="w-full px-4 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 text-sm">
-            </div>
-
-            <div>
-                <select name="status" onchange="this.form.submit()" class="w-full sm:w-auto px-4 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 text-sm bg-white">
-                    <option value="">ทุกสถานะ (All Status)</option>
-                    <option value="active" {{ $statusFilter === 'active' ? 'selected' : '' }}>🟢 เปิดใช้งานปกติ (Active)</option>
-                    <option value="suspended" {{ $statusFilter === 'suspended' ? 'selected' : '' }}>🔴 ถูกระงับ (Suspended)</option>
-                </select>
-            </div>
-
-            <button type="submit" class="px-5 py-2 rounded-xl bg-slate-900 text-white font-semibold text-sm hover:bg-slate-800 transition-colors">
-                ค้นหา
-            </button>
-            @if($search || $statusFilter)
-                <a href="{{ route('admin.users.index') }}" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 font-semibold text-sm hover:bg-slate-200 text-center">
-                    ล้างตัวกรอง
-                </a>
-            @endif
-        </form>
-    </div>
-
-    <div class="bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
-        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-            <h2 class="text-base font-bold text-slate-900">รายชื่อสมาชิกทั้งหมดในระบบ</h2>
-            <span class="text-xs font-semibold text-slate-500">แสดง {{ $users->count() }} จาก {{ $users->total() }} บัญชี</span>
-        </div>
-
-        <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="bg-slate-50 border-b border-slate-100 text-xs font-bold text-slate-500 uppercase tracking-wider">
-                        <th class="py-3.5 px-6">นักศึกษา / ผู้ใช้</th>
-                        <th class="py-3.5 px-6">รหัสนักศึกษา</th>
-                        <th class="py-3.5 px-6">สิทธิ์ผู้ใช้ (Role)</th>
-                        <th class="py-3.5 px-6">สถานะ (Status)</th>
-                        <th class="py-3.5 px-6 text-center">ดำเนินการ (Action)</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100 text-sm">
-                    @forelse($users as $u)
-                    <tr class="hover:bg-slate-50/80 transition-colors">
-                        <td class="py-4 px-6">
-                            <div class="flex items-center space-x-3">
-                                <div class="w-10 h-10 rounded-xl bg-slate-200 flex items-center justify-center font-bold text-slate-700 text-xs shadow-sm overflow-hidden flex-shrink-0">
-                                    @if($u->avatar && Storage::disk('public')->exists($u->avatar))
-                                        <img src="{{ asset('storage/' . $u->avatar) }}" alt="{{ $u->name }}" class="w-full h-full object-cover">
-                                    @else
-                                        {{ $u->initials() }}
-                                    @endif
-                                </div>
-                                <div>
-                                    <div class="font-bold text-slate-900">{{ $u->name }}</div>
-                                    <div class="text-xs text-slate-500">{{ $u->email }}</div>
+        <table class="w-full border-collapse text-left text-sm">
+            <thead class="hidden bg-canvas/70 text-xs text-ink-muted md:table-header-group">
+                <tr>
+                    <th class="px-6 py-3 font-medium">นักศึกษา / ผู้ใช้</th>
+                    <th class="px-6 py-3 font-medium">รหัสนักศึกษา</th>
+                    <th class="px-6 py-3 font-medium">สิทธิ์ผู้ใช้ (Role)</th>
+                    <th class="px-6 py-3 font-medium">สถานะ (Status)</th>
+                    <th class="px-6 py-3 text-right font-medium">ดำเนินการ (Action)</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-line">
+                @forelse($users as $u)
+                    <tr class="grid grid-cols-2 gap-x-4 gap-y-3 px-5 py-5 transition hover:bg-canvas/50 md:table-row md:p-0">
+                        <td class="col-span-2 md:px-6 md:py-4">
+                            <div class="flex items-center gap-3">
+                                <x-ui.avatar :user="$u" />
+                                <div class="min-w-0">
+                                    <div class="font-medium text-ink">{{ $u->name }}</div>
+                                    <div class="truncate text-xs text-ink-muted">{{ $u->email }}</div>
                                     @if($u->bio)
-                                        <div class="text-xs text-slate-400 italic mt-0.5 max-w-xs truncate">"{{ $u->bio }}"</div>
+                                        <div class="mt-0.5 max-w-xs truncate text-xs italic text-ink-faint">"{{ $u->bio }}"</div>
                                     @endif
                                 </div>
                             </div>
                         </td>
-
-                        <td class="py-4 px-6 font-mono text-xs font-semibold text-slate-700">
-                            {{ $u->student_id ?? '-' }}
+                        <td class="md:px-6 md:py-4">
+                            <span class="block text-xs text-ink-faint md:hidden">รหัสนักศึกษา</span>
+                            <span class="font-mono text-xs font-medium text-ink-soft">{{ $u->student_id ?? '-' }}</span>
                         </td>
-
-                        <td class="py-4 px-6">
+                        <td class="md:px-6 md:py-4">
                             @if($u->isAdmin())
-                                <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200 inline-flex items-center gap-1">
-                                    👑 Admin
-                                </span>
+                                <span class="chip chip-warn h-6 px-2.5 text-xs"><x-ui.icon name="shield" class="h-3.5 w-3.5" /> Admin</span>
                             @else
-                                <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 inline-flex items-center gap-1">
-                                    🎓 Student
-                                </span>
+                                <span class="chip chip-info h-6 px-2.5 text-xs">Student</span>
                             @endif
                         </td>
-
-                        <td class="py-4 px-6">
+                        <td class="md:px-6 md:py-4">
                             @if($u->isActive())
-                                <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 inline-flex items-center gap-1">
-                                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span> ปกติ (Active)
-                                </span>
+                                <span class="chip chip-ok h-6 px-2.5 text-xs"><span class="h-1.5 w-1.5 rounded-full bg-ok"></span> ปกติ (Active)</span>
                             @else
-                                <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-200 inline-flex items-center gap-1">
-                                    <span class="w-2 h-2 rounded-full bg-rose-500"></span> ถูกระงับ (Suspended)
-                                </span>
+                                <span class="chip chip-bad h-6 px-2.5 text-xs"><span class="h-1.5 w-1.5 rounded-full bg-bad"></span> ถูกระงับ (Suspended)</span>
                             @endif
                         </td>
-
-                        <td class="py-4 px-6 text-center">
+                        <td class="text-right md:px-6 md:py-4">
                             @if($u->id === Auth::id())
-                                <span class="text-xs text-slate-400 font-semibold italic">(บัญชีของคุณ)</span>
+                                <span class="text-xs italic text-ink-faint">(บัญชีของคุณ)</span>
                             @else
                                 <form action="{{ route('admin.users.toggle-status', $u->id) }}" method="POST" class="inline"
                                     onsubmit="return confirm('คุณแน่ใจหรือไม่ที่จะ {{ $u->isActive() ? 'ระงับบัญชี' : 'เปิดใช้งานบัญชี' }} ของคุณ {{ $u->name }}?');">
                                     @csrf
                                     @if($u->isActive())
-                                        <button type="submit" class="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs shadow-md shadow-rose-500/20 transition-all flex items-center gap-1 mx-auto">
-                                            🚫 ระงับบัญชี (Suspend)
-                                        </button>
+                                        <button type="submit" class="btn btn-danger btn-sm"><x-ui.icon name="ban" class="h-4 w-4" /> ระงับบัญชี (Suspend)</button>
                                     @else
-                                        <button type="submit" class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-md shadow-emerald-500/20 transition-all flex items-center gap-1 mx-auto">
-                                            ✅ เปิดใช้งาน (Activate)
-                                        </button>
+                                        <button type="submit" class="btn btn-success btn-sm"><x-ui.icon name="check" class="h-4 w-4" /> เปิดใช้งาน (Activate)</button>
                                     @endif
                                 </form>
                             @endif
                         </td>
                     </tr>
-                    @empty
-                    <tr>
-                        <td colspan="5" class="py-8 text-center text-slate-500 text-sm">
+                @empty
+                    <tr class="block md:table-row">
+                        <td colspan="5" class="block px-6 py-12 text-center text-sm text-ink-muted md:table-cell">
                             ไม่พบข้อมูลสมาชิกตามเงื่อนไขการค้นหา
                         </td>
                     </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
+                @endforelse
+            </tbody>
+        </table>
 
         @if($users->hasPages())
-        <div class="px-6 py-4 border-t border-slate-100 bg-slate-50">
-            {{ $users->links() }}
-        </div>
+            <div class="border-t border-line bg-canvas/50 px-6 py-4">
+                {{ $users->links('partials.pagination') }}
+            </div>
         @endif
-    </div>
+    </section>
 </div>
 @endsection
