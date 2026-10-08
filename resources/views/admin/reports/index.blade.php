@@ -30,7 +30,7 @@
                     <div class="flex min-w-0 items-start gap-3">
                         <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full {{ $report->target_type === 'activity' ? 'bg-tint-butter' : 'bg-tint-lilac' }}"><x-ui.icon :name="$report->target_type === 'activity' ? 'calendar' : 'user'" /></span>
                         <div class="min-w-0">
-                            <p class="text-xs text-ink-muted">#{{ $report->id }} · {{ $report->created_at->format('d/m/Y H:i') }} · รายงานโดย {{ $report->reporter->name }}</p>
+                            <p class="text-xs text-ink-muted">#{{ $report->id }} · <x-ui.time :value="$report->created_at" /> · รายงานโดย {{ $report->reporter->name }}</p>
                             <p class="mt-1 break-words font-medium text-ink">
                                 {{ $report->target_type === 'activity' ? 'กิจกรรม' : 'ผู้ใช้' }}:
                                 @if($target === null)
@@ -47,7 +47,7 @@
                     </div>
                     <span class="chip {{ $statusStyles[$report->status] ?? '' }}">{{ $tabs[$report->status] ?? $report->status }}</span>
                 </div>
-                <p class="mt-4 whitespace-pre-wrap break-words rounded-tile bg-canvas p-4 text-sm leading-relaxed text-ink-soft"><span class="text-ink-muted">เหตุผลที่รายงาน:</span> {{ $report->reason }}</p>
+                <p class="break-anywhere mt-4 whitespace-pre-wrap rounded-tile bg-canvas p-4 text-sm leading-relaxed text-ink-soft"><span class="text-ink-muted">เหตุผลที่รายงาน:</span> {{ $report->reason }}</p>
 
                 @if($report->isPending())
                     <form method="POST" action="{{ route('admin.reports.resolve', $report) }}" class="mt-4 space-y-3">
@@ -63,7 +63,7 @@
                         </div>
                     </form>
                 @else
-                    <p class="mt-4 text-sm text-ink-muted">ดำเนินการโดย <span class="text-ink-soft">{{ $report->handler?->name ?? '-' }}</span> เมื่อ {{ $report->handled_at?->format('d/m/Y H:i') }} · เหตุผล: {{ $report->admin_note }}</p>
+                    <p class="break-anywhere mt-4 text-sm text-ink-muted">ดำเนินการโดย <span class="text-ink-soft">{{ $report->handler?->name ?? '-' }}</span>@if($report->handled_at) เมื่อ <x-ui.time :value="$report->handled_at" />@endif · เหตุผล: {{ $report->admin_note }}</p>
                 @endif
             </article>
         @empty
@@ -82,7 +82,7 @@
                     <div class="card flex flex-wrap items-end justify-between gap-3 p-5">
                         <div class="min-w-0">
                             <a href="{{ route('activities.show', $hidden) }}" class="link">{{ $hidden->title }}</a>
-                            <p class="mt-1 text-xs text-ink-muted">ซ่อนเมื่อ {{ $hidden->hidden_at->format('d/m/Y H:i') }} · {{ $hidden->hidden_reason }}</p>
+                            <p class="break-anywhere mt-1 text-xs text-ink-muted">ซ่อนเมื่อ <x-ui.time :value="$hidden->hidden_at" /> · {{ $hidden->hidden_reason }}</p>
                         </div>
                         <form method="POST" action="{{ route('admin.activities.unhide', $hidden) }}" class="flex w-full gap-2 sm:w-auto">
                             @csrf @method('PATCH')
@@ -106,7 +106,7 @@
                 <tbody class="divide-y divide-line text-ink-soft">
                     @forelse($logs as $log)
                         <tr>
-                            <td class="whitespace-nowrap px-4 py-3 text-ink-muted">{{ $log->created_at->format('d/m/Y H:i') }}</td>
+                            <td class="whitespace-nowrap px-4 py-3 tabular-nums text-ink-muted"><x-ui.time :value="$log->created_at" /></td>
                             <td class="px-4 py-3">{{ $log->admin->name }}</td>
                             <td class="px-4 py-3"><span class="chip h-6 px-2.5 text-xs">{{ $log->actionLabel() }}</span></td>
                             <td class="px-4 py-3">{{ $log->targetLabel() }}</td>

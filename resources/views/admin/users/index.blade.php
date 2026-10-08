@@ -19,19 +19,19 @@
             <div class="card flex items-center justify-between gap-3 p-5">
                 <div>
                     <dt class="text-xs text-ink-muted">{{ $label }}</dt>
-                    <dd class="mt-1 text-3xl font-medium tracking-tight {{ $color }}">{{ $value }}</dd>
+                    <dd class="mt-1 text-3xl font-medium tracking-tight tabular-nums {{ $color }}">{{ $value }}</dd>
                 </div>
                 <span class="hidden h-11 w-11 shrink-0 place-items-center rounded-2xl text-ink sm:grid {{ $tint }}"><x-ui.icon :name="$icon" /></span>
             </div>
         @endforeach
     </dl>
 
-    <form action="{{ route('admin.users.index') }}" method="GET" class="card flex flex-col gap-3 p-3 sm:flex-row sm:items-center" role="search">
-        <div class="flex flex-1 items-center gap-2 rounded-full bg-canvas pl-4 transition focus-within:ring-4 focus-within:ring-brand-600/15">
+    <form action="{{ route('admin.users.index') }}" method="GET" class="flex flex-col gap-3 sm:flex-row sm:items-center" role="search">
+        <div class="flex flex-1 items-center gap-2 rounded-full border border-line-strong bg-white pl-4 transition focus-within:border-brand-600 focus-within:ring-4 focus-within:ring-brand-600/15">
             <x-ui.icon name="search" class="h-4 w-4 text-ink-faint" />
             <label for="user-search" class="sr-only">ค้นหาสมาชิก</label>
             <input id="user-search" type="text" name="search" value="{{ $search }}" placeholder="ค้นหาด้วยชื่อ, อีเมล หรือรหัสนักศึกษา..."
-                class="h-11 min-w-0 flex-1 bg-transparent pr-4 text-[15px] outline-none placeholder:text-ink-faint">
+                class="h-11 min-w-0 flex-1 bg-transparent pr-4 text-base caret-brand-600 outline-none placeholder:text-ink-faint sm:text-[0.9375rem]">
         </div>
 
         <label for="user-status" class="sr-only">สถานะบัญชี</label>
@@ -70,10 +70,10 @@
                             <div class="flex items-center gap-3">
                                 <x-ui.avatar :user="$u" />
                                 <div class="min-w-0">
-                                    <div class="font-medium text-ink">{{ $u->name }}</div>
+                                    <div class="break-anywhere font-medium text-ink">{{ $u->name }}</div>
                                     <div class="truncate text-xs text-ink-muted">{{ $u->email }}</div>
                                     @if($u->bio)
-                                        <div class="mt-0.5 max-w-xs truncate text-xs italic text-ink-faint">"{{ $u->bio }}"</div>
+                                        <div class="mt-0.5 max-w-xs truncate text-xs italic text-ink-faint" title="{{ $u->bio }}">"{{ $u->bio }}"</div>
                                     @endif
                                 </div>
                             </div>

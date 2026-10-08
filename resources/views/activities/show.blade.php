@@ -7,15 +7,21 @@
     $isEnded = $activity->isEnded();
     // ใช้รายชื่อสมาชิกที่โหลดมาแล้ว แทนการนับซ้ำ (ค่าเท่ากับ approvedCount())
     $approved = $approvedMembers->count();
-    $isFull = $approved >= $activity->capacity;
     $remaining = max(0, $activity->capacity - $approved);
+    $state = App\Support\Ui::activityState($activity, $approved);
     $pct = $activity->capacity > 0 ? min(100, (int) round($approved / $activity->capacity * 100)) : 0;
     $start = $activity->starts_at->copy()->locale('th');
     $end = $activity->ends_at->copy()->locale('th');
     $sameDay = $activity->starts_at->isSameDay($activity->ends_at);
     $avgRating = $reviews->isNotEmpty() ? number_format($reviews->avg('rating'), 1) : null;
-    $tints = ['bg-tint-mint', 'bg-tint-aqua', 'bg-tint-lilac', 'bg-tint-coral', 'bg-tint-butter', 'bg-tint-peach'];
-    $tint = ($isCancelled || $isEnded) ? 'bg-canvas' : $tints[$activity->category_id % count($tints)];
+    $tint = in_array($state, ['cancelled', 'ended'], true) ? 'bg-canvas' : App\Support\Ui::tint($activity->category_id);
+    $capacityNote = match ($state) {
+        'cancelled' => 'ยกเลิกแล้ว',
+        'ended' => 'กิจกรรมจบแล้ว',
+        'ongoing' => 'เริ่มแล้ว · ปิดรับคำขอ',
+        'full' => 'เต็มแล้ว',
+        default => 'ว่าง '.$remaining.' ที่',
+    };
     $sections = array_filter([
         'details' => 'รายละเอียด',
         'members' => $approvedMembers->isNotEmpty() ? 'สมาชิก ('.$approvedMembers->count().')' : null,
@@ -34,63 +40,55 @@
 @if($activity->isHidden())
     <div role="status" class="mt-4 flex gap-3 rounded-tile bg-night p-4 text-white">
         <x-ui.icon name="eye-slash" class="mt-0.5" />
-        <div>
+        <div class="min-w-0">
             <p class="font-medium">กิจกรรมนี้ถูกซ่อนโดยผู้ดูแลระบบ ผู้ใช้อื่นจะมองไม่เห็น</p>
-            <p class="mt-1 text-sm text-white/70">เหตุผล: {{ $activity->hidden_reason }}</p>
+            <p class="break-anywhere mt-1 text-sm text-white/70">เหตุผล: {{ $activity->hidden_reason }}</p>
         </div>
     </div>
 @endif
 
-<div class="mt-4 grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-8">
+<div class="mt-4 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-8">
     {{-- ส่วนหัว: หมวดหมู่ ชื่อ ผู้ประกาศ และตัวเลขสำคัญ (แบบการ์ดโปรไฟล์ของ fastwork) --}}
-    <header class="card p-6 sm:p-8 lg:col-start-1 lg:row-start-1">
+    <header class="card min-w-0 p-6 sm:p-8 lg:col-start-1 lg:row-start-1">
         <div class="flex items-start gap-4">
             <x-ui.date-tile :date="$activity->starts_at" :tint="$tint" class="hidden sm:flex" />
             <div class="min-w-0 flex-1">
                 <div class="flex flex-wrap items-center gap-1.5">
                     <span class="chip chip-outline"><x-ui.icon name="tag" class="h-3.5 w-3.5 text-ink-faint" /> {{ $activity->category->name }}</span>
-                    @if($isCancelled)
-                        <span class="chip chip-bad">ยกเลิกแล้ว</span>
-                    @elseif($isEnded)
-                        <span class="chip">จบแล้ว</span>
-                    @elseif($isFull)
-                        <span class="chip chip-warn">เต็มแล้ว</span>
-                    @else
-                        <span class="chip chip-ok">เปิดรับ · ว่าง {{ $remaining }} ที่</span>
-                    @endif
+                    <x-ui.activity-status :state="$state" :remaining="$remaining" />
                 </div>
-                <h1 class="mt-3 break-words text-[28px] font-medium leading-tight tracking-tight text-ink-soft sm:text-4xl">{{ $activity->title }}</h1>
+                <h1 class="break-anywhere mt-3 text-[1.75rem] font-medium leading-tight tracking-tight text-ink-soft sm:text-4xl">{{ $activity->title }}</h1>
                 <div class="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-ink-muted">
-                    <span class="flex items-center gap-2"><x-ui.avatar :user="$activity->user" size="sm" /> ประกาศโดย <span class="font-medium text-ink">{{ $activity->user->name }}</span></span>
+                    <span class="flex min-w-0 items-center gap-2"><x-ui.avatar :user="$activity->user" size="sm" /> ประกาศโดย <span class="truncate font-medium text-ink">{{ $activity->user->name }}</span></span>
                     <span aria-hidden="true" class="hidden text-line-strong sm:inline">•</span>
-                    <span>อัปเดต {{ $activity->updated_at->format('d/m/Y H:i') }}</span>
+                    <span>อัปเดต <x-ui.time :value="$activity->updated_at" mode="relative" /></span>
                 </div>
             </div>
         </div>
 
         <dl class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div class="stat">
-                <dt class="stat-label mt-0 mb-1">วันที่</dt>
+                <dt class="stat-label mb-1 mt-0">วันที่</dt>
                 <dd class="text-lg font-medium leading-tight text-ink">{{ $start->isoFormat('dd D MMM') }}</dd>
                 <dd class="stat-label">{{ $start->isoFormat('YYYY') }}{{ $sameDay ? '' : ' ถึง '.$end->isoFormat('D MMM') }}</dd>
             </div>
             <div class="stat">
-                <dt class="stat-label mt-0 mb-1">เวลา (เวลาไทย)</dt>
-                <dd class="text-lg font-medium leading-tight text-ink">{{ $activity->starts_at->format('H:i') }}–{{ $activity->ends_at->format('H:i') }}</dd>
+                <dt class="stat-label mb-1 mt-0">เวลา (เวลาไทย)</dt>
+                <dd class="text-lg font-medium leading-tight tabular-nums text-ink">{{ $activity->starts_at->format('H:i') }}–{{ $activity->ends_at->format('H:i') }}</dd>
                 <dd class="stat-label">{{ $isEnded ? 'จบไปแล้ว' : $activity->starts_at->copy()->locale('th')->diffForHumans() }}</dd>
             </div>
             <div class="stat">
-                <dt class="stat-label mt-0 mb-1">ผู้เข้าร่วม</dt>
-                <dd class="text-lg font-medium leading-tight text-ink">{{ $approved }} / {{ $activity->capacity }} คน</dd>
+                <dt class="stat-label mb-1 mt-0">ผู้เข้าร่วม</dt>
+                <dd class="text-lg font-medium leading-tight tabular-nums text-ink">{{ $approved }} / {{ $activity->capacity }} คน</dd>
                 <dd class="stat-label">ไม่รวมผู้ประกาศ</dd>
             </div>
             <div class="stat">
-                <dt class="stat-label mt-0 mb-1">คะแนนรีวิว</dt>
+                <dt class="stat-label mb-1 mt-0">คะแนนรีวิว</dt>
                 @if($avgRating)
-                    <dd class="text-lg font-medium leading-tight text-ink"><span class="text-amber-500">★</span> {{ $avgRating }}</dd>
+                    <dd class="flex items-center gap-1 text-lg font-medium leading-tight tabular-nums text-ink"><x-ui.icon name="star" solid class="h-4 w-4 text-sun" /> {{ $avgRating }}</dd>
                     <dd class="stat-label">จาก {{ $reviews->count() }} รีวิว</dd>
                 @else
-                    <dd class="text-lg font-medium leading-tight text-ink-faint">–</dd>
+                    <dd class="text-lg font-medium leading-tight text-ink-muted">–</dd>
                     <dd class="stat-label">ยังไม่มีรีวิว</dd>
                 @endif
             </div>
@@ -98,20 +96,18 @@
 
         <p class="mt-4 flex items-start gap-2 text-sm text-ink-soft">
             <x-ui.icon name="map-pin" class="mt-0.5 h-4 w-4 text-ink-faint" />
-            <span class="break-words"><span class="text-ink-muted">สถานที่:</span> {{ $activity->location }}</span>
+            <span class="break-anywhere min-w-0"><span class="text-ink-muted">สถานที่:</span> {{ $activity->location }}</span>
         </p>
     </header>
 
     {{-- การ์ดดำเนินการ: ติดด้านขวาบนจอใหญ่ และอยู่ถัดจากส่วนหัวบนมือถือ --}}
-    <aside class="space-y-4 lg:sticky lg:top-24 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-start">
+    <aside class="min-w-0 space-y-4 lg:sticky lg:top-24 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-start">
         <div class="card p-5 sm:p-6">
-            <div class="flex items-end justify-between">
+            <div class="flex items-end justify-between gap-3">
                 <p class="text-sm text-ink-muted">จำนวนผู้เข้าร่วม</p>
-                <p class="text-sm {{ $isFull && ! $isEnded && ! $isCancelled ? 'font-medium text-bad' : 'text-ink-muted' }}">
-                    @if($isCancelled) ยกเลิกแล้ว @elseif($isEnded) กิจกรรมจบแล้ว @elseif($isFull) เต็มแล้ว @else ว่าง {{ $remaining }} ที่ @endif
-                </p>
+                <p class="text-sm {{ $state === 'full' ? 'font-medium text-bad' : 'text-ink-muted' }}">{{ $capacityNote }}</p>
             </div>
-            <p class="mt-1 text-3xl font-medium tracking-tight text-ink">{{ $approved }}<span class="text-lg text-ink-faint"> / {{ $activity->capacity }} คน</span></p>
+            <p class="mt-1 text-3xl font-medium tracking-tight tabular-nums text-ink">{{ $approved }}<span class="text-lg text-ink-faint"> / {{ $activity->capacity }} คน</span></p>
             <div class="mt-3 h-2 overflow-hidden rounded-full bg-canvas" role="progressbar" aria-valuenow="{{ $approved }}" aria-valuemin="0" aria-valuemax="{{ $activity->capacity }}" aria-label="จำนวนผู้เข้าร่วม">
                 <div class="h-full rounded-full transition-all {{ $pct >= 100 ? 'bg-bad' : 'bg-night' }}" style="width: {{ $pct }}%"></div>
             </div>
@@ -138,7 +134,7 @@
                                 </button>
                             </form>
                         </div>
-                    @elseif(! $isFull)
+                    @elseif($state !== 'full')
                         {{-- ฟอร์มส่งคำขอเข้าร่วม --}}
                         <form method="POST" action="{{ route('activities.join', $activity) }}" class="mt-5 border-t border-line pt-5">
                             @csrf
@@ -157,11 +153,16 @@
             @can('update', $activity)
                 @if($activity->status !== 'cancelled')
                     <div class="mt-5 space-y-2 border-t border-line pt-5">
-                        <a href="{{ route('activities.requests', $activity) }}" class="btn btn-primary w-full">
+                        @if($activity->starts_at->isPast())
+                            {{-- กิจกรรมเริ่มแล้ว: งานหลักของผู้จัดคือเช็กชื่อ (ผู้ที่ถูกเช็กว่ามาเท่านั้นที่รีวิวได้) --}}
+                            <a href="{{ route('activities.requests', ['activity' => $activity, 'status' => 'approved']) }}" class="btn btn-primary w-full"><x-ui.icon name="check-circle" class="h-4 w-4" /> เช็กชื่อผู้เข้าร่วม</a>
+                            <p class="pb-1 text-center text-xs text-ink-muted">ผู้ที่ถูกเช็กว่า “มา” เท่านั้นจึงรีวิวกิจกรรมได้</p>
+                        @endif
+                        <a href="{{ route('activities.requests', $activity) }}" class="btn {{ $activity->starts_at->isPast() ? 'btn-secondary' : 'btn-primary' }} w-full">
                             <x-ui.icon name="clipboard" class="h-4 w-4" />
                             จัดการคำขอ
                             @if($pendingCount > 0)
-                                <span class="badge-count bg-amber-400 text-night">{{ $pendingCount }}</span>
+                                <span class="badge-count bg-sun text-night">{{ $pendingCount }}</span>
                             @endif
                         </a>
                         <a href="{{ route('activities.edit', $activity) }}" class="btn btn-secondary w-full"><x-ui.icon name="pencil" class="h-4 w-4" /> แก้ไขกิจกรรม</a>
@@ -170,7 +171,24 @@
                 @endif
             @else
                 @if(!($activity->status === 'published' && $activity->starts_at->isFuture() && Auth::id() !== $activity->user_id))
-                    <p class="mt-5 border-t border-line pt-5 text-sm text-ink-muted">เฉพาะเจ้าของโพสต์เท่านั้นที่แก้ไขหรือยกเลิกกิจกรรมนี้ได้</p>
+                    {{-- ไม่รับคำขอแล้ว: บอกเหตุผลตามสถานะ แทนข้อความเรื่องสิทธิ์แก้ไข --}}
+                    <div class="mt-5 space-y-3 border-t border-line pt-5 text-sm">
+                        <p class="flex items-start gap-2 text-ink-soft">
+                            @if($isCancelled)
+                                <x-ui.icon name="ban" class="mt-0.5 h-4 w-4 text-bad" /> กิจกรรมนี้ถูกยกเลิกแล้ว จึงไม่รับคำขอเข้าร่วม
+                            @elseif($isEnded)
+                                <x-ui.icon name="check-circle" class="mt-0.5 h-4 w-4 text-ink-faint" /> กิจกรรมนี้จบแล้ว ขอบคุณทุกคนที่มาร่วม
+                            @else
+                                <x-ui.icon name="clock" class="mt-0.5 h-4 w-4 text-brand-600" /> กิจกรรมเริ่มไปแล้ว จึงปิดรับคำขอเข้าร่วม
+                            @endif
+                        </p>
+                        @if($myParticipation?->isApproved())
+                            <p class="flex items-center gap-2 rounded-tile bg-ok-soft p-3 font-medium text-ok"><x-ui.icon name="check" class="h-4 w-4" /> คุณอยู่ในรายชื่อผู้เข้าร่วม</p>
+                        @endif
+                        @if($reviewBlockReason === null)
+                            <a href="#reviews" class="btn btn-primary w-full"><x-ui.icon name="star" solid class="h-4 w-4 text-sun" /> ให้คะแนนกิจกรรมนี้</a>
+                        @endif
+                    </div>
                 @endif
             @endcan
         </div>
@@ -180,9 +198,9 @@
             <x-ui.avatar :user="$activity->user" size="lg" />
             <div class="min-w-0">
                 <p class="text-xs text-ink-muted">ผู้ประกาศกิจกรรม</p>
-                <p class="truncate font-medium text-ink">{{ $activity->user->name }}</p>
+                <p class="truncate font-medium text-ink" title="{{ $activity->user->name }}">{{ $activity->user->name }}</p>
                 @if($activity->user->bio)
-                    <p class="mt-1 text-sm text-ink-muted line-clamp-3 break-words">{{ $activity->user->bio }}</p>
+                    <p class="break-anywhere mt-1 text-sm text-ink-muted line-clamp-3">{{ $activity->user->bio }}</p>
                 @endif
             </div>
         </div>
@@ -198,10 +216,10 @@
 
         <section id="details" class="card mt-5 scroll-mt-40 p-6 sm:p-8">
             <h2 class="section-title">รายละเอียดกิจกรรม</h2>
-            <p class="mt-3 whitespace-pre-wrap break-words leading-relaxed text-ink-soft">{{ $activity->description }}</p>
+            <p class="break-anywhere mt-3 whitespace-pre-wrap leading-relaxed text-ink-soft">{{ $activity->description }}</p>
             <dl class="mt-6 grid gap-3 border-t border-line pt-5 text-sm sm:grid-cols-2">
-                <div><dt class="text-ink-muted">เวลาเริ่ม (เวลาไทย)</dt><dd class="mt-0.5 font-medium text-ink">{{ $start->isoFormat('dd D MMM YYYY') }} · {{ $activity->starts_at->format('H:i') }}</dd></div>
-                <div><dt class="text-ink-muted">เวลาสิ้นสุด (เวลาไทย)</dt><dd class="mt-0.5 font-medium text-ink">{{ $end->isoFormat('dd D MMM YYYY') }} · {{ $activity->ends_at->format('H:i') }}</dd></div>
+                <div><dt class="text-ink-muted">เวลาเริ่ม (เวลาไทย)</dt><dd class="mt-0.5 font-medium tabular-nums text-ink">{{ $start->isoFormat('dd D MMM YYYY') }} · {{ $activity->starts_at->format('H:i') }}</dd></div>
+                <div><dt class="text-ink-muted">เวลาสิ้นสุด (เวลาไทย)</dt><dd class="mt-0.5 font-medium tabular-nums text-ink">{{ $end->isoFormat('dd D MMM YYYY') }} · {{ $activity->ends_at->format('H:i') }}</dd></div>
             </dl>
         </section>
 
@@ -214,8 +232,8 @@
                         <li class="flex items-center gap-3 rounded-tile bg-canvas p-3">
                             <x-ui.avatar :user="$member->user" />
                             <div class="min-w-0">
-                                <p class="truncate text-sm font-medium text-ink">{{ $member->user->name }}</p>
-                                <p class="text-xs text-ink-muted">เข้าร่วมเมื่อ {{ $member->updated_at->format('d/m/Y H:i') }}</p>
+                                <p class="truncate text-sm font-medium text-ink" title="{{ $member->user->name }}">{{ $member->user->name }}</p>
+                                <p class="text-xs text-ink-muted">เข้าร่วมเมื่อ <x-ui.time :value="$member->updated_at" mode="relative" /></p>
                             </div>
                         </li>
                     @endforeach
@@ -228,19 +246,23 @@
             <div class="flex flex-wrap items-end justify-between gap-4">
                 <h2 class="section-title">รีวิวจากผู้เข้าร่วม ({{ $reviews->count() }})</h2>
                 @if($avgRating)
-                    <p class="flex items-baseline gap-2"><span class="text-3xl font-medium tracking-tight text-ink">{{ $avgRating }}</span><span class="text-amber-500">{{ str_repeat('★', (int) round($reviews->avg('rating'))) }}</span></p>
+                    @php $rounded = (int) round($reviews->avg('rating')); @endphp
+                    <p class="flex items-center gap-2" aria-label="คะแนนเฉลี่ย {{ $avgRating }} จาก 5">
+                        <span class="text-3xl font-medium tracking-tight tabular-nums text-ink">{{ $avgRating }}</span>
+                        <span class="flex" aria-hidden="true">@for($i = 1; $i <= 5; $i++)<x-ui.icon name="star" solid class="h-4 w-4 {{ $i <= $rounded ? 'text-sun' : 'text-line-strong' }}" />@endfor</span>
+                    </p>
                 @endif
             </div>
 
             @if($reviewBlockReason === null)
-                <form method="POST" action="{{ route('activities.reviews.store', $activity) }}" class="mt-5 rounded-2xl border border-amber-200 bg-amber-50/70 p-5">
+                <form method="POST" action="{{ route('activities.reviews.store', $activity) }}" class="mt-5 rounded-2xl bg-tint-butter/30 p-5">
                     @csrf
                     <fieldset>
                         <legend class="font-medium text-ink">ให้คะแนนกิจกรรมนี้</legend>
                         <div class="star-rating mt-2">
                             @for($i = 5; $i >= 1; $i--)
                                 <input type="radio" id="rating-{{ $i }}" name="rating" value="{{ $i }}" class="peer sr-only" @checked(old('rating') == $i) required>
-                                <label for="rating-{{ $i }}" title="{{ $i }} ดาว">★<span class="sr-only">{{ $i }} ดาว</span></label>
+                                <label for="rating-{{ $i }}" title="{{ $i }} ดาว"><x-ui.icon name="star" solid class="h-9 w-9" /><span class="sr-only">{{ $i }} ดาว</span></label>
                             @endfor
                         </div>
                     </fieldset>
@@ -253,23 +275,25 @@
                 <p class="mt-4 flex items-center gap-2 rounded-tile bg-canvas p-3 text-sm text-ink-muted"><x-ui.icon name="alert" class="h-4 w-4" />{{ $reviewBlockReason }}</p>
             @endif
 
-            <div class="mt-5 space-y-3">
-                @forelse($reviews as $review)
-                    <article class="rounded-tile border border-line p-4">
-                        <div class="flex items-center justify-between gap-3">
-                            <div class="flex min-w-0 items-center gap-2.5">
-                                <x-ui.avatar :user="$review->user" size="sm" />
-                                <p class="truncate text-sm font-medium text-ink">{{ $review->user->name }}</p>
+            @if($reviews->isNotEmpty())
+                <ul class="mt-5 divide-y divide-line">
+                    @foreach($reviews as $review)
+                        <li class="py-4 first:pt-0 last:pb-0">
+                            <div class="flex items-center justify-between gap-3">
+                                <div class="flex min-w-0 items-center gap-2.5">
+                                    <x-ui.avatar :user="$review->user" size="sm" />
+                                    <p class="truncate text-sm font-medium text-ink" title="{{ $review->user->name }}">{{ $review->user->name }}</p>
+                                </div>
+                                <p class="flex shrink-0" role="img" aria-label="{{ $review->rating }} จาก 5 ดาว">@for($i = 1; $i <= 5; $i++)<x-ui.icon name="star" solid class="h-4 w-4 {{ $i <= $review->rating ? 'text-sun' : 'text-line-strong' }}" />@endfor</p>
                             </div>
-                            <p class="shrink-0 text-sm text-amber-500" aria-label="{{ $review->rating }} จาก 5 ดาว">{{ str_repeat('★', $review->rating) }}<span class="text-line-strong">{{ str_repeat('★', 5 - $review->rating) }}</span></p>
-                        </div>
-                        @if($review->comment)<p class="mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed text-ink-soft">{{ $review->comment }}</p>@endif
-                        <p class="mt-2 text-xs text-ink-faint">{{ $review->created_at->format('d/m/Y H:i') }}</p>
-                    </article>
-                @empty
-                    <p class="rounded-tile bg-canvas p-4 text-center text-sm text-ink-muted">{{ $activity->isEnded() ? 'ยังไม่มีรีวิว' : 'รีวิวได้หลังกิจกรรมจบ' }}</p>
-                @endforelse
-            </div>
+                            @if($review->comment)<p class="break-anywhere mt-3 whitespace-pre-wrap text-sm leading-relaxed text-ink-soft">{{ $review->comment }}</p>@endif
+                            <p class="mt-2 text-xs text-ink-faint"><x-ui.time :value="$review->created_at" mode="date" /></p>
+                        </li>
+                    @endforeach
+                </ul>
+            @else
+                <p class="mt-5 rounded-tile bg-canvas p-4 text-center text-sm text-ink-muted">{{ $activity->isEnded() ? 'ยังไม่มีรีวิว' : 'รีวิวได้หลังกิจกรรมจบ' }}</p>
+            @endif
         </section>
 
         {{-- ส่วนที่ 5: รายงานกิจกรรมหรือผู้ใช้ (ไม่แสดงให้เจ้าของกิจกรรม) --}}
@@ -295,8 +319,8 @@
                     </div>
                     <div>
                         <label for="report-reason" class="field-label">เหตุผล</label>
-                        <textarea id="report-reason" name="reason" rows="3" maxlength="1000" required placeholder="อธิบายปัญหาที่พบ เช่น เนื้อหาไม่เหมาะสม หรือไม่มาตามนัด" class="field">{{ old('reason') }}</textarea>
-                        @error('reason')<p class="field-error">{{ $message }}</p>@enderror
+                        <textarea id="report-reason" name="reason" rows="3" maxlength="1000" required placeholder="อธิบายปัญหาที่พบ เช่น เนื้อหาไม่เหมาะสม หรือไม่มาตามนัด" class="field @error('reason') field-invalid @enderror" @error('reason') aria-invalid="true" aria-describedby="report-reason-error" @enderror>{{ old('reason') }}</textarea>
+                        @error('reason')<p id="report-reason-error" class="field-error">{{ $message }}</p>@enderror
                     </div>
                     <button class="btn btn-danger">ส่งรายงาน</button>
                 </form>

@@ -11,7 +11,7 @@
 
     {{-- การ์ดโปรไฟล์ (ประยุกต์จากการ์ดโปรไฟล์ฟรีแลนซ์ของ fastwork) --}}
     <section class="card relative overflow-hidden">
-        <div aria-hidden="true" class="h-28 sm:h-32" style="background: radial-gradient(70% 120% at 0% 0%, #b3f4ef, transparent 60%), radial-gradient(60% 120% at 100% 0%, #d3bdff, transparent 60%), radial-gradient(60% 100% at 50% 100%, #ffe299, transparent 70%), #f5f5f3;"></div>
+        <div aria-hidden="true" class="h-28 sm:h-32" style="background: radial-gradient(70% 120% at 0% 0%, #b7d4ef, transparent 62%), radial-gradient(60% 120% at 100% 0%, #d5e8e4, transparent 62%), radial-gradient(60% 100% at 50% 100%, #f3e6b8, transparent 70%), #f5f5f3;"></div>
         <div class="px-6 pb-6 sm:px-8 sm:pb-8">
             <div class="-mt-12 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
                 <div class="relative w-fit">
@@ -29,7 +29,7 @@
                 @endif
             </div>
 
-            <h1 class="mt-4 text-2xl font-medium tracking-tight text-ink-soft sm:text-3xl">{{ $user->name }}</h1>
+            <h1 class="break-anywhere mt-4 text-2xl font-medium tracking-tight text-ink-soft sm:text-3xl">{{ $user->name }}</h1>
             <div class="mt-2 flex flex-wrap gap-1.5">
                 <span class="chip {{ $user->isAdmin() ? 'chip-warn' : 'chip-info' }}">{{ $user->isAdmin() ? 'ผู้ดูแลระบบ (Admin)' : 'นักศึกษา (Student)' }}</span>
                 <span class="chip {{ $user->isActive() ? 'chip-ok' : 'chip-bad' }}">{{ $user->isActive() ? 'ปกติ (Active)' : 'ถูกระงับ (Suspended)' }}</span>
@@ -39,7 +39,7 @@
                 <span class="flex items-center gap-2"><x-ui.icon name="mail" class="h-4 w-4" /> <span class="font-medium text-ink-soft">{{ $user->email }}</span></span>
             </div>
             @if($user->bio)
-                <p class="mt-4 rounded-tile bg-canvas px-4 py-3 text-sm leading-relaxed text-ink-soft">“{{ $user->bio }}”</p>
+                <p class="break-anywhere mt-4 rounded-tile bg-canvas px-4 py-3 text-sm leading-relaxed text-ink-soft">“{{ $user->bio }}”</p>
             @endif
 
             <dl class="mt-6 grid grid-cols-2 gap-3 sm:max-w-md">
@@ -57,7 +57,7 @@
 
             <input type="hidden" id="avatar_data" name="avatar_data">
 
-            <div class="flex flex-col items-center gap-5 rounded-2xl border border-dashed border-line-strong bg-canvas/60 p-5 sm:flex-row">
+            <div class="flex flex-col items-center gap-5 rounded-2xl bg-canvas p-5 sm:flex-row">
                 <div class="grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-full bg-white text-lg font-semibold text-ink-muted ring-1 ring-line">
                     <img id="avatar-preview" src="{{ $hasAvatar ? asset('storage/' . $user->avatar) : '' }}" class="{{ $hasAvatar ? '' : 'hidden' }} h-full w-full object-cover" alt="ตัวอย่างรูปโปรไฟล์">
                     <span id="avatar-placeholder" class="{{ $hasAvatar ? 'hidden' : '' }}">{{ $user->initials() }}</span>

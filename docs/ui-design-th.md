@@ -35,10 +35,15 @@
 - กิจกรรมไม่มีรูป จึงใช้ช่องวันที่สีพาสเทลแยกตามหมวดหมู่แทนภาพปก
 - มือถือใช้เมนูล่างแบบแคปซูลลอย (กิจกรรม / สร้างโพสต์ / นัดของฉัน) แทนแถบเมนูเลื่อนข้างเดิม
 - ข้อความไทยในโน้ตตกแต่งกำหนดจุดขึ้นบรรทัดเอง เพราะเบราว์เซอร์ตัดคำไทยบางคำผิด
+- ส่วนหัวหน้ากิจกรรมเป็นแถบสีอ่อนเปิดโล่ง (ไม่ครอบการ์ด) ใช้สีพื้นแบบ fastwork (ฟ้าอ่อน `#b7d4ef` · เขียวเทา `#d5e8e4` · ทราย `#f3e6b8`) และย่อลงเมื่อค้นหาหรือเปิดหน้าถัดไป
+- ดาวคะแนนและจุดบนโลโก้ใช้สีเหลืองของ fastwork (`sun` = `#f5c518`) เป็นไอคอน SVG ไม่ใช้ตัวอักษร ★
+- ช่องกรอกใช้ตัวอักษร 16px บนมือถือ เพื่อไม่ให้ iPhone ซูมหน้าจอเมื่อแตะ
+- ข้อความแจ้งสำเร็จหายเองใน 4 วินาที ส่วนข้อความผิดพลาดค้างไว้จนผู้ใช้กดปิด
+- หน้ารวมกิจกรรมเรียงกิจกรรมที่ยังไม่จบไว้ก่อนตามเวลาเริ่ม ส่วนที่จบแล้วต่อท้าย (จบล่าสุดก่อน)
 
 ## Tokens (ใช้เป็นคลาส Tailwind)
 
-- สี: `canvas`, `ink` / `ink-soft` / `ink-muted` / `ink-faint`, `line` / `line-strong`, `night`, `brand-50…700`, `tint-mint|aqua|lilac|coral|butter|peach`, `ok` / `warn` / `bad` (+ `-soft`)
+- สี: `canvas`, `ink` / `ink-soft` / `ink-muted` / `ink-faint`, `line` / `line-strong`, `night`, `brand-50…700`, `sun`, `tint-mint|aqua|lilac|coral|butter|peach`, `ok` / `warn` / `bad` (+ `-soft`)
 - มุม: `rounded-tile` (14px), `rounded-card` (24px) · เงา: `shadow-soft`, `shadow-lift`, `shadow-float`
 - ฟอนต์: `font-sans` (Google Sans), `font-note` (Playpen Sans Thai) · easing: `ease-out-expo`
 
@@ -47,16 +52,19 @@
 | กลุ่ม | คลาส |
 |---|---|
 | ปุ่ม | `btn` + `btn-primary` / `btn-secondary` / `btn-ghost` / `btn-danger` / `btn-success`, ขนาด `btn-sm` / `btn-lg` / `btn-icon` |
-| กล่อง | `card`, `panel`, `stat` + `stat-value` / `stat-label`, `kicker` |
+| กล่อง | `card`, `panel`, `stat` + `stat-value` / `stat-label` |
 | ป้าย | `chip` + `chip-ok` / `chip-warn` / `chip-bad` / `chip-info` / `chip-dark` / `chip-outline`, `badge-count` |
 | ฟอร์ม | `field-label`, `field` (+ `field-invalid`), `field-hint`, `field-error`, `star-rating` |
 | แท็บ | `tabs`, `tab`, `tab-active`, `tab-count` |
-| ตัวอักษร | `page-title`, `section-title`, `text-gradient`, `text-gradient-bright` (บนพื้นเข้ม), `link` |
+| ตัวอักษร | `page-title`, `section-title`, `text-gradient`, `text-gradient-bright` (บนพื้นเข้ม), `link`, `break-anywhere` (ข้อความที่ผู้ใช้พิมพ์เอง เช่น ชื่อกิจกรรม สถานที่ ให้ตัดบรรทัดได้แม้เป็นคำยาว) |
 | Motion | `reveal` (ค่อย ๆ ขึ้นตามลำดับด้วย `style="--i: n"`) ปิดเองเมื่อผู้ใช้ตั้ง reduced motion |
 
 ## Blade components และ partials
 
-- `<x-ui.icon name="clock" class="h-4 w-4" />` ดูชื่อไอคอนทั้งหมดใน `components/ui/icon.blade.php`
+- `<x-ui.icon name="clock" class="h-4 w-4" />` ดูชื่อไอคอนทั้งหมดใน `components/ui/icon.blade.php` ไอคอนทึบใช้ `solid` เช่น `<x-ui.icon name="star" solid />`
+- `<x-ui.activity-status :state="App\Support\Ui::activityState($activity, $approvedCount)" />` ป้ายสถานะ เปิดรับ / เต็มแล้ว / กำลังดำเนินการ / จบแล้ว / ยกเลิกแล้ว (ใส่ `:remaining` เพื่อบอกที่ว่าง)
+- `<x-ui.time :value="$model->created_at" />` วันเวลาแบบไทยในแท็ก `<time>` (`mode="relative"` เช่น 2 ชั่วโมงที่แล้ว, `mode="date"`)
+- `App\Support\Ui::tint($id)` สีพาสเทลประจำหมวดหมู่หรือผู้ใช้ ใช้ร่วมกันทุกหน้า
 - `<x-ui.avatar :user="$user" size="sm" />` ขนาด `xs` / `sm` / `md` / `lg` / `xl` ถ้าไม่มีรูปจะแสดงอักษรย่อบนพื้นพาสเทล
 - `<x-ui.date-tile :date="$activity->starts_at" tint="bg-tint-mint" />`
 - `<x-activity-card :activity="$activity" />` ต้องโหลด `user`, `category`, `withCount` และ `withAvg` แบบเดียวกับ `ActivityController@index`
@@ -82,4 +90,6 @@
 
 - Tailwind CDN สร้าง CSS จากคลาสที่อยู่ใน HTML จริง จึงประกอบชื่อคลาสแบบไดนามิกได้ แต่ keyframes ใน config จะถูกสร้างเมื่อมีคลาส `animate-*` ใช้งานเท่านั้น
 - ลิงก์ที่ครอบทั้งการ์ด (`after:absolute after:inset-0`) ต้องมี `after:z-10` เพราะ avatar เป็น `relative` จะบังจุดคลิก
-- ตัวตรวจ impeccable จะเตือนเรื่อง gradient text และโทนม่วงชมพู ซึ่งตั้งใจให้ตรงกับต้นแบบ และใช้เพียงคำเดียวต่อหน้า
+- ตัวตรวจ impeccable จะเตือนเรื่อง gradient text และโทนม่วงชมพู ซึ่งตั้งใจให้ตรงกับต้นแบบ และใช้เพียงคำเดียวต่อหน้า ส่วนคำเตือนป้ายในแผงตัวกรองที่ยังพับอยู่ และชื่อ/bio ที่ตัดด้วย … เป็นการตรวจที่คลาดเคลื่อน
+- อย่าครอบการ์ดซ้อนการ์ด: รายการย่อยในการ์ดใช้เส้นคั่น (`divide-y`) หรือพื้น `bg-canvas` แทนกรอบ
+- กิจกรรมที่เริ่มแล้วปิดรับคำขอ ผู้จัดจะเห็นปุ่ม "เช็กชื่อผู้เข้าร่วม" ไปที่แท็บอนุมัติแล้ว เพราะผู้ที่ถูกเช็กว่ามาเท่านั้นจึงรีวิวได้

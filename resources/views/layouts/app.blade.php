@@ -47,9 +47,9 @@
     @endauth
 
     <script>
-        // ตั้งเวลาให้กล่องข้อความแจ้งเตือนจางหายไปเองอัตโนมัติหลัง 4 วินาที
+        // ข้อความสำเร็จจางหายเองหลัง 4 วินาที (ข้อความผิดพลาดค้างไว้ให้อ่านจนกดปิด)
         setTimeout(() => {
-            document.querySelectorAll('[data-flash]').forEach((box) => {
+            document.querySelectorAll('[data-flash][data-autohide]').forEach((box) => {
                 box.style.opacity = '0';
                 setTimeout(() => box.remove(), 500);
             });

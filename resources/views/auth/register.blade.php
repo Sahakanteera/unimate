@@ -9,7 +9,7 @@
     <div class="flex items-center justify-center lg:py-6">
         <div class="w-full max-w-lg">
             <div class="card p-6 sm:p-10">
-                <h1 class="text-[28px] font-medium leading-tight tracking-tight text-ink-soft">
+                <h1 class="text-[1.75rem] font-medium leading-tight tracking-tight text-ink-soft">
                     สมัครสมาชิก <span class="text-gradient">UniMate</span>
                 </h1>
                 <p class="mt-2 text-sm text-ink-muted">สร้างบัญชีนักศึกษาเพื่อเริ่มหาเพื่อนทำกิจกรรมในมหาวิทยาลัย</p>

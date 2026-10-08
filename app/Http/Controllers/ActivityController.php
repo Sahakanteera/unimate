@@ -21,12 +21,17 @@ class ActivityController extends Controller
             'date' => ['nullable', 'date_format:Y-m-d'],
             'status' => ['nullable', 'in:published,cancelled,all'],
         ]);
+        $now = now();
         // ดึงเจ้าของและหมวดหมู่ล่วงหน้า ลด query ซ้ำเมื่อแสดงการ์ดกิจกรรมแต่ละใบ
         $query = Activity::with(['user', 'category'])
             ->withCount(['approvedParticipants as approved_participants_count', 'reviews'])
             ->withAvg('reviews', 'rating')
             ->whereNull('hidden_at') // ส่วนที่ 5: ไม่แสดงกิจกรรมที่ Admin ซ่อน
-            ->orderBy('starts_at')->orderBy('id');
+            // กิจกรรมที่ยังไม่จบขึ้นก่อนตามเวลาเริ่ม ส่วนที่จบแล้วต่อท้ายโดยจบล่าสุดก่อน
+            ->orderByRaw('CASE WHEN ends_at < ? THEN 1 ELSE 0 END', [$now])
+            ->orderByRaw('CASE WHEN ends_at < ? THEN NULL ELSE starts_at END', [$now])
+            ->orderByRaw('CASE WHEN ends_at < ? THEN starts_at END DESC', [$now])
+            ->orderBy('id');
         $status = $filters['status'] ?? 'published';
         if ($status !== 'all') {
             $query->where('status', $status);

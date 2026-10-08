@@ -17,9 +17,8 @@
     <a href="{{ route('activities.show', $activity) }}" class="btn btn-ghost btn-sm -ml-3"><x-ui.icon name="arrow-left" class="h-4 w-4" /> กลับหน้ากิจกรรม</a>
 
     <div class="mt-4">
-        <span class="kicker"><x-ui.icon name="clipboard" class="h-4 w-4" /> สำหรับผู้จัดกิจกรรม</span>
-        <h1 class="page-title mt-4">จัดการคำขอเข้าร่วม</h1>
-        <p class="mt-2 break-words text-ink-muted">{{ $activity->title }} · {{ $activity->starts_at->copy()->locale('th')->isoFormat('dd D MMM') }} {{ $activity->starts_at->format('H:i') }}</p>
+        <h1 class="page-title">จัดการคำขอเข้าร่วม</h1>
+        <p class="break-anywhere mt-2 text-ink-muted">{{ $activity->title }} · {{ $activity->starts_at->copy()->locale('th')->isoFormat('dd D MMM') }} {{ $activity->starts_at->format('H:i') }}</p>
     </div>
 
     <div class="mt-6 grid grid-cols-3 gap-3">
@@ -27,6 +26,20 @@
         <div class="stat bg-white shadow-soft"><p class="stat-value">{{ $approvedTotal }}<span class="text-base text-ink-faint">/{{ $activity->capacity }}</span></p><p class="stat-label">ผู้เข้าร่วมแล้ว (คน)</p></div>
         <div class="stat bg-white shadow-soft"><p class="stat-value {{ $isFull ? 'text-bad' : '' }}">{{ max(0, $activity->capacity - $approvedTotal) }}</p><p class="stat-label">{{ $isFull ? 'เต็มแล้ว' : 'ที่ว่างคงเหลือ' }}</p></div>
     </div>
+
+    {{-- กิจกรรมเริ่มแล้ว: เตือนให้เช็กชื่อ เพราะผู้ที่ถูกเช็กว่า "มา" เท่านั้นจึงรีวิวได้ (ส่วนที่ 5) --}}
+    @if($activity->status !== 'cancelled' && $activity->starts_at->isPast())
+        @if($statusFilter !== 'approved')
+            <div class="mt-6 flex flex-col gap-3 rounded-tile bg-brand-50 p-4 text-sm text-brand-700 sm:flex-row sm:items-center sm:justify-between">
+                <p class="flex items-start gap-2"><x-ui.icon name="check-circle" class="mt-0.5 h-4 w-4" /> กิจกรรมเริ่มแล้ว เช็กชื่อ “มา/ขาด” ได้ในแท็บอนุมัติแล้ว ผู้ที่ถูกเช็กว่ามาเท่านั้นจึงรีวิวกิจกรรมได้</p>
+                <a href="{{ route('activities.requests', ['activity' => $activity, 'status' => 'approved']) }}" class="btn btn-primary btn-sm shrink-0">ไปเช็กชื่อ</a>
+            </div>
+        @elseif(($unchecked = $participants->whereNull('attendance')->count()) > 0)
+            <p class="mt-6 flex items-center gap-2 rounded-tile bg-warn-soft p-4 text-sm text-warn"><x-ui.icon name="clock" class="h-4 w-4" /> ยังไม่ได้เช็กชื่อ {{ $unchecked }} คน</p>
+        @else
+            <p class="mt-6 flex items-center gap-2 rounded-tile bg-ok-soft p-4 text-sm text-ok"><x-ui.icon name="check" class="h-4 w-4" /> เช็กชื่อครบทุกคนแล้ว</p>
+        @endif
+    @endif
 
     <div class="card mt-6 p-2 sm:p-3">
         {{-- แท็บกรองสถานะ --}}
@@ -45,7 +58,7 @@
                         <x-ui.avatar :user="$p->user" size="lg" />
                         <div class="min-w-0 flex-1">
                             <div class="flex flex-wrap items-center gap-2">
-                                <p class="font-medium text-ink">{{ $p->user->name }}</p>
+                                <p class="break-anywhere font-medium text-ink">{{ $p->user->name }}</p>
                                 @if($p->user->student_id)
                                     <span class="text-xs text-ink-muted">({{ $p->user->student_id }})</span>
                                 @endif
@@ -60,9 +73,9 @@
                                 @endif
                             </div>
                             @if($p->message)
-                                <p class="mt-2 inline-block max-w-full break-words rounded-2xl rounded-tl-md bg-canvas px-3.5 py-2 text-sm text-ink-soft"><span class="sr-only">ข้อความ: </span>{{ $p->message }}</p>
+                                <p class="break-anywhere mt-2 inline-block max-w-full rounded-2xl rounded-tl-md bg-canvas px-3.5 py-2 text-sm text-ink-soft"><span class="sr-only">ข้อความ: </span>{{ $p->message }}</p>
                             @endif
-                            <p class="mt-1.5 text-xs text-ink-faint">ส่งคำขอเมื่อ {{ $p->created_at->format('d/m/Y H:i') }}</p>
+                            <p class="mt-1.5 text-xs text-ink-faint">ส่งคำขอเมื่อ <x-ui.time :value="$p->created_at" mode="relative" /></p>
                         </div>
                     </div>
 

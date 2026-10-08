@@ -1,7 +1,7 @@
-{{-- ข้อความแจ้งผลแบบ toast ลอยใต้ header ปิดเองหลัง 4 วินาที (สคริปต์อยู่ท้าย layouts.app) --}}
+{{-- ข้อความแจ้งผลแบบ toast ลอยใต้ header: ข้อความสำเร็จปิดเองหลัง 4 วินาที ข้อความผิดพลาดค้างไว้จนกดปิด (สคริปต์อยู่ท้าย layouts.app) --}}
 @foreach(['success' => ['check-circle', 'text-tint-mint'], 'error' => ['alert', 'text-tint-coral']] as $type => [$icon, $iconColor])
     @if(session($type))
-        <div id="flash-{{ $type }}" role="{{ $type === 'error' ? 'alert' : 'status' }}" data-flash
+        <div id="flash-{{ $type }}" role="{{ $type === 'error' ? 'alert' : 'status' }}" data-flash @if($type === 'success') data-autohide @endif
              class="fixed inset-x-0 top-24 z-50 mx-auto flex w-[calc(100%-2rem)] max-w-md animate-drop-in items-start gap-3 rounded-2xl bg-night px-4 py-3.5 text-white shadow-float transition-opacity duration-500">
             <x-ui.icon :name="$icon" class="mt-0.5 h-5 w-5 {{ $iconColor }}" />
             <p class="flex-1 text-sm font-medium leading-relaxed">{{ session($type) }}</p>

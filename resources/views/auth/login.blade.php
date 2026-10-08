@@ -10,7 +10,7 @@
         <div class="w-full max-w-md">
             <div class="card p-6 sm:p-10">
                 <span class="grid h-12 w-12 place-items-center rounded-2xl bg-night text-2xl font-semibold text-white">U</span>
-                <h1 class="mt-6 text-[28px] font-medium leading-tight tracking-tight text-ink-soft">
+                <h1 class="mt-6 text-[1.75rem] font-medium leading-tight tracking-tight text-ink-soft">
                     เข้าสู่ระบบ <span class="text-gradient">UniMate</span>
                 </h1>
                 <p class="mt-2 text-sm text-ink-muted">ระบบจับกลุ่มหาเพื่อนร่วมทำกิจกรรมในมหาวิทยาลัย</p>

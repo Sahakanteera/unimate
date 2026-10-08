@@ -11,7 +11,7 @@
 <div class="relative flex h-full min-h-[560px] flex-col justify-between overflow-hidden rounded-card bg-night p-10 text-white">
 
     <div class="relative">
-        <span class="inline-flex h-8 items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3.5 text-[13px] font-medium text-white/80">
+        <span class="inline-flex h-8 items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3.5 text-[0.8125rem] font-medium text-white/80">
             <x-ui.icon name="sparkles" class="h-4 w-4" /> UniMate · สำหรับนักศึกษา
         </span>
         <h2 class="mt-6 text-4xl font-medium leading-tight tracking-tight xl:text-5xl">หาเพื่อนร่วมกิจกรรม<br>ได้ใน<span class="text-gradient-bright">ไม่กี่คลิก</span></h2>

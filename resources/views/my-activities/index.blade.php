@@ -2,8 +2,13 @@
 @section('title', 'นัดของฉัน | UniMate')
 
 @php
-    $tints = ['bg-tint-mint', 'bg-tint-aqua', 'bg-tint-lilac', 'bg-tint-coral', 'bg-tint-butter', 'bg-tint-peach'];
-    $tintFor = fn ($activity) => ($activity->status === 'cancelled' || $activity->isEnded()) ? 'bg-canvas' : $tints[$activity->category_id % count($tints)];
+    $tintFor = fn ($activity) => ($activity->status === 'cancelled' || $activity->isEnded()) ? 'bg-canvas' : App\Support\Ui::tint($activity->category_id);
+    $stats = [
+        ['กิจกรรมที่ฉันสร้าง', $myActivities->count()],
+        ['คำขอใหม่รอฉันอนุมัติ', $myActivities->sum('pending_count')],
+        ['คำขอของฉันที่รออนุมัติ', $myParticipations->where('status', 'pending')->count()],
+        ['กิจกรรมที่ได้เข้าร่วม', $myParticipations->where('status', 'approved')->count()],
+    ];
 @endphp
 
 @section('content')
@@ -16,12 +21,14 @@
         <a href="{{ route('activities.create') }}" class="btn btn-primary hidden sm:inline-flex"><x-ui.icon name="plus" class="h-4 w-4" /> สร้างโพสต์</a>
     </div>
 
-    <dl class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div class="stat flex flex-col-reverse bg-white shadow-soft"><dt class="stat-label">กิจกรรมที่ฉันสร้าง</dt><dd class="stat-value">{{ $myActivities->count() }}</dd></div>
-        <div class="stat flex flex-col-reverse bg-white shadow-soft"><dt class="stat-label">คำขอใหม่รอฉันอนุมัติ</dt><dd class="stat-value">{{ $myActivities->sum('pending_count') }}</dd></div>
-        <div class="stat flex flex-col-reverse bg-white shadow-soft"><dt class="stat-label">คำขอของฉันที่รออนุมัติ</dt><dd class="stat-value">{{ $myParticipations->where('status', 'pending')->count() }}</dd></div>
-        <div class="stat flex flex-col-reverse bg-white shadow-soft"><dt class="stat-label">กิจกรรมที่ได้เข้าร่วม</dt><dd class="stat-value">{{ $myParticipations->where('status', 'approved')->count() }}</dd></div>
-    </dl>
+    {{-- ผู้ใช้ใหม่ที่ยังไม่มีอะไรเลย ไม่ต้องแสดงตัวเลขศูนย์ทั้งแถว (กล่องว่างด้านล่างบอกทางไปต่อแล้ว) --}}
+    @if(collect($stats)->sum(1) > 0)
+        <dl class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            @foreach($stats as [$label, $value])
+                <div class="stat flex flex-col-reverse bg-white shadow-soft"><dt class="stat-label">{{ $label }}</dt><dd class="stat-value">{{ $value }}</dd></div>
+            @endforeach
+        </dl>
+    @endif
 
     {{-- ======================== กิจกรรมที่ฉันสร้าง ======================== --}}
     <section class="mt-10" aria-labelledby="mine-heading">
@@ -35,22 +42,20 @@
                             <div class="min-w-0 flex-1">
                                 <div class="flex flex-wrap gap-1.5">
                                     <span class="chip chip-outline">{{ $activity->category->name }}</span>
-                                    @if($activity->status === 'cancelled')
-                                        <span class="chip chip-bad">ยกเลิกแล้ว</span>
-                                    @elseif($activity->isEnded())
-                                        <span class="chip">จบแล้ว</span>
-                                    @else
-                                        <span class="chip chip-ok">ประกาศแล้ว</span>
-                                    @endif
+                                    <x-ui.activity-status :state="App\Support\Ui::activityState($activity, $activity->approved_count)" />
                                 </div>
-                                <h3 class="mt-2 break-words text-[17px] font-medium leading-snug text-ink"><a href="{{ route('activities.show', $activity) }}" class="hover:underline">{{ $activity->title }}</a></h3>
+                                <h3 class="break-anywhere mt-2 text-[1.0625rem] font-medium leading-snug text-ink"><a href="{{ route('activities.show', $activity) }}" class="hover:underline">{{ $activity->title }}</a></h3>
                                 <p class="mt-1 text-sm text-ink-muted">วันเริ่ม: {{ $activity->starts_at->copy()->locale('th')->isoFormat('dd D MMM') }} · {{ $activity->starts_at->format('H:i') }}</p>
                             </div>
                         </div>
                         <div class="mt-auto flex flex-wrap items-center gap-3 border-t border-line pt-4 text-sm">
-                            <span class="flex items-center gap-1.5 text-ink-soft"><x-ui.icon name="users" class="h-4 w-4 text-ink-faint" /><span class="font-medium text-ok">{{ $activity->approved_count }} เข้าร่วม</span> / {{ $activity->capacity }} ที่</span>
-                            <a href="{{ route('activities.requests', $activity) }}" class="ml-auto inline-flex items-center gap-1.5 {{ $activity->pending_count > 0 ? 'chip chip-warn hover:brightness-95' : 'text-ink-muted hover:text-ink' }}">
-                                @if($activity->pending_count > 0)
+                            @php $started = $activity->status !== 'cancelled' && $activity->starts_at->isPast(); @endphp
+                            <span class="flex items-center gap-1.5 tabular-nums text-ink-soft"><x-ui.icon name="users" class="h-4 w-4 text-ink-faint" /><span class="font-medium text-ok">{{ $activity->approved_count }} เข้าร่วม</span> / {{ $activity->capacity }} ที่</span>
+                            {{-- กิจกรรมเริ่มแล้ว: พาไปเช็กชื่อ (แท็บอนุมัติแล้ว) แทนรายการคำขอ --}}
+                            <a href="{{ $started ? route('activities.requests', ['activity' => $activity, 'status' => 'approved']) : route('activities.requests', $activity) }}" class="ml-auto inline-flex items-center gap-1.5 {{ ! $started && $activity->pending_count > 0 ? 'chip chip-warn hover:brightness-95' : 'text-ink-muted hover:text-ink' }}">
+                                @if($started)
+                                    เช็กชื่อผู้เข้าร่วม
+                                @elseif($activity->pending_count > 0)
                                     {{ $activity->pending_count }} คำขอรอ
                                 @else
                                     จัดการคำขอ
@@ -103,7 +108,7 @@
                                         <span class="chip">ถอนตัวแล้ว</span>
                                     @endif
                                 </div>
-                                <h3 class="mt-2 break-words text-[17px] font-medium leading-snug text-ink"><a href="{{ route('activities.show', $act) }}" class="hover:underline">{{ $act->title }}</a></h3>
+                                <h3 class="break-anywhere mt-2 text-[1.0625rem] font-medium leading-snug text-ink"><a href="{{ route('activities.show', $act) }}" class="hover:underline">{{ $act->title }}</a></h3>
                                 <p class="mt-1 flex items-center gap-1.5 text-sm text-ink-muted"><x-ui.avatar :user="$act->user" size="xs" /> โดย {{ $act->user->name }} · {{ $act->starts_at->copy()->locale('th')->isoFormat('dd D MMM') }} {{ $act->starts_at->format('H:i') }}</p>
                             </div>
                         </div>

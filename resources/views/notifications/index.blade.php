@@ -28,8 +28,8 @@
             <li class="flex items-start gap-4 p-4 sm:p-5 {{ $notification->read_at ? '' : 'bg-brand-50/60' }}">
                 <span class="mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-full text-ink {{ $tone }}"><x-ui.icon :name="$icon" /></span>
                 <div class="min-w-0 flex-1">
-                    <p class="text-sm leading-relaxed text-ink {{ $notification->read_at ? '' : 'font-medium' }}">{{ $message }}</p>
-                    <p class="mt-1 text-xs text-ink-faint">{{ $notification->created_at->copy()->locale('th')->diffForHumans() }}</p>
+                    <p class="break-anywhere text-sm leading-relaxed text-ink {{ $notification->read_at ? '' : 'font-medium' }}">{{ $message }}</p>
+                    <p class="mt-1 text-xs text-ink-muted"><x-ui.time :value="$notification->created_at" mode="relative" /></p>
                 </div>
                 @if(!$notification->read_at)
                     <span class="mt-2 h-2.5 w-2.5 shrink-0 rounded-full bg-brand-600" aria-label="ยังไม่อ่าน"></span>

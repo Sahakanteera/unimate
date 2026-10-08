@@ -17,11 +17,11 @@
     ];
 @endphp
 <header class="sticky top-0 z-40 px-3 pt-3 sm:px-4">
-    <div class="mx-auto flex h-16 max-w-[76rem] items-center gap-2 rounded-full border border-line/80 bg-white/80 pl-4 pr-2 shadow-soft backdrop-blur-xl">
+    <div class="mx-auto flex h-16 max-w-[76rem] items-center gap-2 rounded-full border border-line/80 bg-white/80 pl-4 pr-2 shadow-soft backdrop-blur-md">
         <a href="{{ route('home') }}" class="flex shrink-0 items-center gap-2.5 rounded-full pr-2" aria-label="UniMate หน้าแรก">
             <span class="relative grid h-9 w-9 place-items-center rounded-xl bg-night text-lg font-semibold text-white">
                 U
-                <span class="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full ring-2 ring-white" style="background: linear-gradient(135deg, #2483ff, #ff66f4 60%, #fe7b02);"></span>
+                <span class="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-sun ring-2 ring-white"></span>
             </span>
             <span class="text-xl font-medium tracking-tight text-ink">UniMate</span>
         </a>
@@ -31,13 +31,13 @@
                 @foreach($mainNav as [$route, $label, $patterns])
                     @php $active = request()->routeIs(...$patterns); @endphp
                     <a href="{{ route($route) }}" @if($active) aria-current="page" @endif
-                       class="inline-flex h-10 items-center rounded-full px-4 text-[15px] transition {{ $active ? 'bg-canvas font-medium text-ink' : 'text-ink-muted hover:bg-canvas/70 hover:text-ink' }}">{{ $label }}</a>
+                       class="inline-flex h-10 items-center rounded-full px-4 text-[0.9375rem] transition {{ $active ? 'bg-canvas font-medium text-ink' : 'text-ink-muted hover:bg-canvas/70 hover:text-ink' }}">{{ $label }}</a>
                 @endforeach
 
                 {{-- รวมเมนู Admin เป็น dropdown เดียว เพื่อไม่ให้แถบเมนูยาวเกิน --}}
                 @if($isAdmin)
                     <details class="relative" data-nav-dropdown>
-                        <summary class="inline-flex h-10 cursor-pointer select-none items-center gap-1.5 rounded-full px-4 text-[15px] transition {{ request()->routeIs('admin.*') ? 'bg-canvas font-medium text-ink' : 'text-ink-muted hover:bg-canvas/70 hover:text-ink' }}">
+                        <summary class="inline-flex h-10 cursor-pointer select-none items-center gap-1.5 rounded-full px-4 text-[0.9375rem] transition {{ request()->routeIs('admin.*') ? 'bg-canvas font-medium text-ink' : 'text-ink-muted hover:bg-canvas/70 hover:text-ink' }}">
                             <x-ui.icon name="shield" class="h-4 w-4" />
                             ผู้ดูแลระบบ
                             @if($pendingReports > 0)<span class="badge-count">{{ $pendingReports }}</span>@endif
@@ -68,7 +68,7 @@
                 <a href="{{ route('notifications.index') }}" class="btn btn-ghost btn-icon relative {{ request()->routeIs('notifications.*') ? 'bg-canvas text-ink' : '' }}" title="การแจ้งเตือน" aria-label="การแจ้งเตือน{{ $unreadCount > 0 ? ' ('.$unreadCount.' ยังไม่อ่าน)' : '' }}">
                     <x-ui.icon name="bell" class="h-[22px] w-[22px]" />
                     @if($unreadCount > 0)
-                        <span class="badge-count absolute right-0.5 top-0.5 h-[18px] min-w-[18px] text-[10px] ring-2 ring-white">{{ $unreadCount }}</span>
+                        <span class="badge-count absolute right-0.5 top-0.5 h-[18px] min-w-[18px] text-[0.625rem] ring-2 ring-white">{{ $unreadCount }}</span>
                     @endif
                 </a>
 
@@ -118,8 +118,8 @@
                     </div>
                 </details>
             @else
-                <a href="{{ route('login') }}" class="btn btn-ghost h-9 px-3 text-sm sm:h-11 sm:px-5 sm:text-[15px] {{ request()->routeIs('login') ? 'text-ink' : '' }}">เข้าสู่ระบบ</a>
-                <a href="{{ route('register') }}" class="btn btn-primary h-9 px-3.5 text-sm sm:h-11 sm:px-5 sm:text-[15px]">สมัครสมาชิก</a>
+                <a href="{{ route('login') }}" class="btn btn-ghost h-9 px-3 text-sm sm:h-11 sm:px-5 sm:text-[0.9375rem] {{ request()->routeIs('login') ? 'text-ink' : '' }}">เข้าสู่ระบบ</a>
+                <a href="{{ route('register') }}" class="btn btn-primary h-9 px-3.5 text-sm sm:h-11 sm:px-5 sm:text-[0.9375rem]">สมัครสมาชิก</a>
             @endauth
         </div>
     </div>

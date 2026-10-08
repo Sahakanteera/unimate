@@ -7,7 +7,7 @@
     <div class="card w-full max-w-lg p-8 text-center sm:p-12">
         <span class="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-tint-coral text-ink"><x-ui.icon name="lock" class="h-7 w-7" /></span>
         <span class="chip chip-bad mt-6">403 ACCESS DENIED</span>
-        <h1 class="mt-4 text-[28px] font-medium leading-tight tracking-tight text-ink-soft sm:text-4xl">คุณไม่มีสิทธิ์ดำเนินการนี้</h1>
+        <h1 class="mt-4 text-[1.75rem] font-medium leading-tight tracking-tight text-ink-soft sm:text-4xl">คุณไม่มีสิทธิ์ดำเนินการนี้</h1>
         <p class="mx-auto mt-3 max-w-md text-ink-muted">
             กรุณาตรวจสอบสิทธิ์ของบัญชี การแก้ไขและยกเลิกกิจกรรมอนุญาตเฉพาะเจ้าของโพสต์ ส่วนหน้าจัดการระบบอนุญาตเฉพาะผู้ดูแลระบบ
         </p>

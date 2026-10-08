@@ -6,7 +6,13 @@
 --}}
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+{{-- พื้นหลังและฟอนต์ตั้งไว้ก่อน Tailwind CDN สร้าง CSS เสร็จ ลดอาการหน้าขาว/ฟอนต์เพี้ยนตอนโหลด --}}
+<style>
+    html { background: #f5f5f3; }
+    body { margin: 0; background: #f5f5f3; color: #171717; font-family: "Google Sans", "Noto Sans Thai", system-ui, sans-serif; }
+</style>
 
 <script src="https://cdn.tailwindcss.com/3.4.17"></script>
 <script>
@@ -23,6 +29,7 @@
                     line: { DEFAULT: '#e4e8ef', strong: '#d2d4d9' },
                     night: { DEFAULT: '#131922', soft: '#222a36' },
                     brand: { 50: '#eef5ff', 100: '#dceaff', 200: '#b9d6ff', 500: '#2483ff', 600: '#0569ff', 700: '#0052cc' },
+                    sun: '#f5c518',
                     tint: { mint: '#b3efbd', aqua: '#b3f4ef', lilac: '#d3bdff', coral: '#ffafa3', butter: '#ffe299', peach: '#fdd3a8' },
                     ok: { DEFAULT: '#1d7a0c', soft: '#e4f6e0' },
                     warn: { DEFAULT: '#7a5300', soft: '#fff3cd' },
@@ -48,7 +55,7 @@
 
 <style type="text/tailwindcss">
     @layer base {
-        html { -webkit-tap-highlight-color: transparent; scroll-padding-top: 6rem; }
+        html { -webkit-tap-highlight-color: transparent; scroll-padding-top: 6rem; scrollbar-color: #d2d4d9 #f5f5f3; accent-color: #0569ff; }
         body { @apply bg-canvas font-sans text-ink antialiased; }
         :focus-visible { @apply outline-none ring-4 ring-brand-600/25; }
         ::selection { @apply bg-brand-100; }
@@ -58,7 +65,7 @@
 
     @layer components {
         /* ปุ่มแคปซูลแบบ fastwork: ปุ่มหลักสีเข้ม ปุ่มรองขอบบาง */
-        .btn { @apply inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-full px-5 text-[15px] font-medium leading-none transition duration-150 ease-out-expo select-none disabled:pointer-events-none disabled:opacity-50; }
+        .btn { @apply inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-full px-5 text-[0.9375rem] font-medium leading-none transition duration-150 ease-out-expo select-none disabled:pointer-events-none disabled:opacity-50; }
         .btn-primary { @apply bg-night text-white hover:bg-black active:scale-[.98]; }
         .btn-secondary { @apply border border-line-strong bg-white text-ink hover:border-ink-faint hover:bg-canvas; }
         .btn-ghost { @apply text-ink-muted hover:bg-black/5 hover:text-ink; }
@@ -71,7 +78,7 @@
         .card { @apply rounded-card border border-line/80 bg-white shadow-soft; }
         .panel { @apply rounded-tile bg-canvas; }
 
-        .chip { @apply inline-flex h-7 items-center gap-1.5 whitespace-nowrap rounded-full bg-canvas px-3 text-[13px] font-medium leading-none text-ink-soft; }
+        .chip { @apply inline-flex h-7 items-center gap-1.5 whitespace-nowrap rounded-full bg-canvas px-3 text-[0.8125rem] font-medium leading-none text-ink-soft; }
         .chip-ok { @apply bg-ok-soft text-ok; }
         .chip-warn { @apply bg-warn-soft text-warn; }
         .chip-bad { @apply bg-bad-soft text-bad; }
@@ -79,8 +86,9 @@
         .chip-dark { @apply bg-night text-white; }
         .chip-outline { @apply border border-line bg-white; }
 
+        /* ช่องกรอกใช้ 16px บนมือถือ เพื่อไม่ให้ iPhone ซูมหน้าจอตอนแตะ */
         .field-label { @apply mb-1.5 block text-sm font-medium text-ink-soft; }
-        .field { @apply block h-12 w-full rounded-tile border border-line-strong bg-white px-4 text-[15px] text-ink transition duration-150 placeholder:text-ink-faint focus:border-brand-600 focus:outline-none focus:ring-4 focus:ring-brand-600/15; }
+        .field { @apply block h-12 w-full rounded-tile border border-line-strong bg-white px-4 text-base text-ink caret-brand-600 transition duration-150 placeholder:text-ink-faint focus:border-brand-600 focus:outline-none focus:ring-4 focus:ring-brand-600/15 sm:text-[0.9375rem]; }
         textarea.field { @apply h-auto py-3 leading-relaxed; }
         select.field { @apply appearance-none bg-no-repeat pr-10; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='2' stroke='%2350555e'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='m19.5 8.25-7.5 7.5-7.5-7.5'/%3E%3C/svg%3E"); background-position: right .9rem center; background-size: 1rem; }
         .field-invalid { @apply border-bad focus:border-bad focus:ring-bad/15; }
@@ -89,33 +97,34 @@
 
         /* แท็บขีดเส้นใต้ 2px แบบแท็บโปรไฟล์ของ fastwork */
         .tabs { @apply flex gap-6 overflow-x-auto border-b border-line; scrollbar-width: none; }
-        .tab { @apply relative inline-flex h-12 shrink-0 items-center gap-2 whitespace-nowrap text-[15px] text-ink-muted transition hover:text-ink; }
+        .tab { @apply relative inline-flex h-12 shrink-0 items-center gap-2 whitespace-nowrap text-[0.9375rem] text-ink-muted transition hover:text-ink; }
         .tab-active { @apply font-medium text-ink shadow-[inset_0_-2px_0_0_#171717]; }
-        .tab-count { @apply inline-grid h-5 min-w-[1.25rem] place-items-center rounded-full bg-canvas px-1.5 text-xs font-medium text-ink-muted; }
+        .tab-count { @apply inline-grid h-5 min-w-[1.25rem] place-items-center rounded-full bg-canvas px-1.5 text-xs font-medium tabular-nums text-ink-muted; }
 
         /* ช่องตัวเลขแบบช่องนับถอยหลังของ fastwork */
         .stat { @apply rounded-tile bg-canvas px-4 py-3.5; }
-        .stat-value { @apply text-2xl font-medium leading-tight tracking-tight text-ink; }
+        .stat-value { @apply text-2xl font-medium leading-tight tracking-tight tabular-nums text-ink; }
         .stat-label { @apply mt-1 text-xs text-ink-muted; }
 
-        .kicker { @apply inline-flex h-8 items-center gap-2 rounded-full border border-line bg-white/70 px-3.5 text-[13px] font-medium text-ink-muted; }
-        .page-title { @apply text-[30px] font-medium leading-tight tracking-tight text-ink-soft sm:text-[40px]; }
+        .page-title { @apply text-[1.875rem] font-medium leading-tight tracking-tight text-ink-soft sm:text-[2.5rem]; }
         .section-title { @apply text-lg font-medium text-ink; }
         /* ไล่สีฟ้า→ชมพู→ส้มแบบ fastwork: บนพื้นสว่างใช้โทนเข้มขึ้นให้อ่านได้ (≥3:1), บนพื้นเข้มใช้โทนสดเดิม */
         .text-gradient { @apply bg-clip-text text-transparent; background-image: linear-gradient(90deg, #0569ff 0%, #d43bc9 55%, #e05a00 100%); }
         .text-gradient-bright { @apply bg-clip-text text-transparent; background-image: linear-gradient(90deg, #82bcff 0%, #ff66f4 50%, #fe7b02 100%); }
         .link { @apply font-medium text-brand-700 underline-offset-4 hover:underline; }
-        .badge-count { @apply inline-grid h-5 min-w-[1.25rem] place-items-center rounded-full bg-bad px-1 text-[11px] font-semibold leading-none text-white; }
+        .badge-count { @apply inline-grid h-5 min-w-[1.25rem] place-items-center rounded-full bg-bad px-1 text-[0.6875rem] font-semibold leading-none tabular-nums text-white; }
+        /* ข้อความที่ผู้ใช้พิมพ์เอง (ชื่อ สถานที่ ข้อความ) ตัดบรรทัดได้แม้เป็นคำยาวไม่มีช่องว่าง ไม่ดันหน้าล้นจอ */
+        .break-anywhere { overflow-wrap: anywhere; }
 
         /* ให้คะแนนรีวิว: ดาวเรียง 1-5 ใช้ radio เดิม (DOM เรียง 5→1 แล้วกลับด้านด้วย flex-row-reverse) */
         .star-rating { @apply inline-flex flex-row-reverse justify-end gap-1; }
-        .star-rating label { @apply cursor-pointer text-[34px] leading-none text-line-strong transition duration-150; }
-        .star-rating input:checked ~ label { @apply text-amber-400; }
-        /* ขณะชี้เมาส์: แสดงตัวอย่างตามดาวที่ชี้อยู่ แทนค่าที่เลือกไว้ */
-        .star-rating:hover label { color: #d2d4d9 !important; }
-        .star-rating label:hover,
-        .star-rating label:hover ~ label { color: #fbbf24 !important; }
-        .star-rating input:focus-visible + label { @apply rounded-md ring-4 ring-brand-600/25; }
+        .star-rating label { @apply cursor-pointer rounded-md text-line-strong transition duration-150; }
+        .star-rating input:checked ~ label { @apply text-sun; }
+        /* ขณะชี้ที่ดาว: แสดงตัวอย่างตามดาวที่ชี้อยู่ แทนค่าที่เลือกไว้ */
+        .star-rating:has(label:hover) label { @apply text-line-strong; }
+        .star-rating:has(label:hover) label:hover,
+        .star-rating:has(label:hover) label:hover ~ label { @apply text-sun; }
+        .star-rating input:focus-visible + label { @apply ring-4 ring-brand-600/25; }
 
         .reveal { animation: um-fade-up 420ms cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay: calc(var(--i, 0) * 45ms); }
         @media (prefers-reduced-motion: reduce) {

@@ -6,9 +6,9 @@
     ];
 @endphp
 <nav class="fixed inset-x-3 bottom-3 z-40 lg:hidden" aria-label="เมนูหลัก (มือถือ)">
-    <div class="mx-auto flex h-[68px] max-w-md items-center justify-around rounded-full border border-line/80 bg-white/85 px-3 shadow-float backdrop-blur-xl">
+    <div class="mx-auto flex h-[68px] max-w-md items-center justify-around rounded-full border border-line/80 bg-white/85 px-3 shadow-float backdrop-blur-md">
         @php [$route, $label, $icon, $patterns] = $tabs[0]; $active = request()->routeIs(...$patterns); @endphp
-        <a href="{{ route($route) }}" @if($active) aria-current="page" @endif class="flex w-20 flex-col items-center gap-1 rounded-full py-1.5 text-[11px] {{ $active ? 'font-medium text-ink' : 'text-ink-muted' }}">
+        <a href="{{ route($route) }}" @if($active) aria-current="page" @endif class="flex w-20 flex-col items-center gap-1 rounded-full py-1.5 text-[0.6875rem] {{ $active ? 'font-medium text-ink' : 'text-ink-muted' }}">
             <x-ui.icon :name="$icon" class="h-6 w-6" />{{ $label }}
         </a>
 
@@ -17,7 +17,7 @@
         </a>
 
         @php [$route, $label, $icon, $patterns] = $tabs[1]; $active = request()->routeIs(...$patterns); @endphp
-        <a href="{{ route($route) }}" @if($active) aria-current="page" @endif class="flex w-20 flex-col items-center gap-1 rounded-full py-1.5 text-[11px] {{ $active ? 'font-medium text-ink' : 'text-ink-muted' }}">
+        <a href="{{ route($route) }}" @if($active) aria-current="page" @endif class="flex w-20 flex-col items-center gap-1 rounded-full py-1.5 text-[0.6875rem] {{ $active ? 'font-medium text-ink' : 'text-ink-muted' }}">
             <x-ui.icon :name="$icon" class="h-6 w-6" />{{ $label }}
         </a>
     </div>

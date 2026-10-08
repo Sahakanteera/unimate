@@ -20,10 +20,9 @@
         </form>
 
         <ul class="card divide-y divide-line">
-            @php $tints = ['bg-tint-mint', 'bg-tint-aqua', 'bg-tint-lilac', 'bg-tint-coral', 'bg-tint-butter', 'bg-tint-peach']; @endphp
             @forelse($categories as $category)
                 <li class="flex flex-col gap-3 p-5 sm:flex-row sm:items-end">
-                    <span class="hidden h-12 w-12 shrink-0 place-items-center rounded-tile text-ink sm:grid {{ $tints[$category->id % count($tints)] }}"><x-ui.icon name="tag" /></span>
+                    <span class="hidden h-12 w-12 shrink-0 place-items-center rounded-tile text-ink sm:grid {{ App\Support\Ui::tint($category->id) }}"><x-ui.icon name="tag" /></span>
                     <form method="POST" action="{{ route('admin.categories.update', $category) }}" class="flex flex-1 items-end gap-2">
                         @csrf @method('PUT')
                         <div class="flex-1">
