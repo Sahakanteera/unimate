@@ -37,7 +37,7 @@
             </li>
         @empty
             <li class="flex flex-col items-center px-6 py-14 text-center">
-                <span class="grid h-14 w-14 place-items-center rounded-2xl bg-canvas text-ink-muted"><x-ui.icon name="bell" class="h-6 w-6" /></span>
+                <x-ui.empty-art name="empty-notifications" />
                 <p class="mt-4 text-ink-muted">ไม่มีการแจ้งเตือนในขณะนี้</p>
             </li>
         @endforelse

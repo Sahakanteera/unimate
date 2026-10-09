@@ -80,6 +80,9 @@
         </form>
 
         <aside class="min-w-0 lg:sticky lg:top-24 lg:self-start">
+            {{-- บนมือถือแผงนี้อยู่ใต้ปุ่มส่งฟอร์ม จึงแสดงภาพเฉพาะจอใหญ่ที่อยู่ข้างฟอร์ม --}}
+            <img src="{{ asset('images/web/illustrations/hero-mates.webp') }}" alt="" width="768" height="512"
+                 class="mb-4 hidden h-auto w-full rounded-card bg-white lg:block" loading="lazy" decoding="async">
             <div class="rounded-card bg-tint-butter/60 p-6">
                 <p class="flex items-center gap-2 font-medium text-ink"><x-ui.icon name="sparkles" class="h-5 w-5" /> เคล็ดลับโพสต์ให้มีคนอยากร่วม</p>
                 <ul class="mt-4 space-y-3 text-sm leading-relaxed text-ink-soft">

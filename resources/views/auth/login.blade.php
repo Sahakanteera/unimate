@@ -3,14 +3,14 @@
 @section('title', 'เข้าสู่ระบบ - UniMate')
 
 @section('content')
-<div class="grid gap-8 lg:grid-cols-2 lg:items-stretch">
-    <div class="hidden lg:block">@include('auth.partials.showcase')</div>
+<div class="mx-auto grid max-w-xl gap-5 lg:max-w-none lg:grid-cols-2 lg:items-stretch lg:gap-8">
+    <div class="lg:sticky lg:top-24 lg:self-start">@include('auth.partials.showcase')</div>
 
     <div class="flex items-center justify-center lg:py-10">
         <div class="w-full max-w-md">
             <div class="card p-6 sm:p-10">
-                <span class="grid h-12 w-12 place-items-center rounded-2xl bg-night text-2xl font-semibold text-white">U</span>
-                <h1 class="mt-6 text-[1.75rem] font-medium leading-tight tracking-tight text-ink-soft">
+                <x-ui.brand-mark class="h-10 w-10 sm:h-12 sm:w-12" />
+                <h1 class="mt-4 text-[1.75rem] font-medium leading-tight tracking-tight text-ink-soft sm:mt-6">
                     เข้าสู่ระบบ <span class="text-gradient">UniMate</span>
                 </h1>
                 <p class="mt-2 text-sm text-ink-muted">ระบบจับกลุ่มหาเพื่อนร่วมทำกิจกรรมในมหาวิทยาลัย</p>

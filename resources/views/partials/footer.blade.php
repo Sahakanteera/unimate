@@ -8,7 +8,7 @@
     <div class="mx-auto max-w-[76rem] rounded-card bg-night px-6 py-8 text-white/70 sm:px-10">
         <div class="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
             <div class="flex items-center gap-3">
-                <span class="grid h-9 w-9 place-items-center rounded-xl bg-white text-lg font-semibold text-night">U</span>
+                <x-ui.brand-mark class="h-9 w-9" />
                 <div>
                     <p class="font-medium text-white">UniMate</p>
                     <p class="text-sm">หาเพื่อนร่วมกิจกรรมในมหาวิทยาลัยได้ในไม่กี่คลิก</p>

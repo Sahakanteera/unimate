@@ -3,8 +3,8 @@
 @section('title', 'สมัครสมาชิก - UniMate')
 
 @section('content')
-<div class="grid gap-8 lg:grid-cols-2 lg:items-stretch">
-    <div class="hidden lg:block">@include('auth.partials.showcase')</div>
+<div class="mx-auto grid max-w-xl gap-5 lg:max-w-none lg:grid-cols-2 lg:items-stretch lg:gap-8">
+    <div class="lg:sticky lg:top-24 lg:self-start">@include('auth.partials.showcase')</div>
 
     <div class="flex items-center justify-center lg:py-6">
         <div class="w-full max-w-lg">

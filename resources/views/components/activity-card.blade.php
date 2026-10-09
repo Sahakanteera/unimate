@@ -22,9 +22,11 @@
     'group relative flex flex-col card transition duration-300 ease-out-expo hover:-translate-y-0.5 hover:shadow-lift has-[a:focus-visible]:ring-4 has-[a:focus-visible]:ring-brand-600/25',
     'opacity-80 hover:opacity-100' => $closed,
 ]) }}>
-    <div class="flex items-start gap-4 p-5 pb-0">
-        <x-ui.date-tile :date="$activity->starts_at" :tint="$tint" />
-        <div class="min-w-0 flex-1">
+    {{-- หัวการ์ดเป็นสัญลักษณ์ของหมวด (ไม่ใช่ภาพถ่าย) เพราะกิจกรรมหมวดเดียวกันหลายใบจะได้ภาพซ้ำและอาจไม่ตรงเรื่อง เช่น วิ่งกับแบดมินตัน --}}
+    <x-ui.category-art :category="$activity->category->name" :tint="$tint" :muted="$closed" class="rounded-t-card" />
+    <div class="flex items-start gap-4 px-5">
+        <x-ui.date-tile :date="$activity->starts_at" tint="bg-white" class="relative -mt-7 shadow-soft ring-1 ring-line" />
+        <div class="min-w-0 flex-1 pt-4">
             <div class="flex flex-wrap items-center gap-1.5">
                 <span class="chip chip-outline">{{ $activity->category->name }}</span>
                 <x-ui.activity-status :state="$state" />

@@ -109,7 +109,7 @@
             <x-activity-card :activity="$activity" class="reveal min-w-0" style="--i: {{ $loop->index }}" />
         @empty
             <div class="col-span-full flex flex-col items-center rounded-card border border-dashed border-line-strong bg-white/60 px-6 py-14 text-center">
-                <span class="grid h-14 w-14 place-items-center rounded-2xl bg-canvas text-ink-muted"><x-ui.icon name="search" class="h-6 w-6" /></span>
+                <x-ui.empty-art name="empty-search" />
                 <p class="mt-4 font-medium text-ink">ไม่พบกิจกรรมที่ตรงกับตัวกรอง</p>
                 <p class="mt-1 text-sm text-ink-muted">ลองเปลี่ยนคำค้นหรือสร้างกิจกรรมใหม่</p>
                 <div class="mt-6 flex flex-wrap justify-center gap-2">

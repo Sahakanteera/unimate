@@ -22,7 +22,7 @@
         <ul class="card divide-y divide-line">
             @forelse($categories as $category)
                 <li class="flex flex-col gap-3 p-5 sm:flex-row sm:items-end">
-                    <span class="hidden h-12 w-12 shrink-0 place-items-center rounded-tile text-ink sm:grid {{ App\Support\Ui::tint($category->id) }}"><x-ui.icon name="tag" /></span>
+                    <span class="hidden h-12 w-12 shrink-0 place-items-center rounded-tile sm:grid {{ App\Support\Ui::tint($category->id) }}"><x-ui.category-icon :category="$category->name" class="h-10 w-10" /></span>
                     <form method="POST" action="{{ route('admin.categories.update', $category) }}" class="flex flex-1 items-end gap-2">
                         @csrf @method('PUT')
                         <div class="flex-1">

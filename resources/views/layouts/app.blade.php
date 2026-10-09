@@ -5,6 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#f5f5f3">
     <title>@yield('title', 'UniMate - ระบบจับกลุ่มหาเพื่อนร่วมทำกิจกรรมในมหาวิทยาลัย')</title>
+    <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="any">
+    <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
+    <meta name="description" content="ค้นหากิจกรรมที่สนใจ ชวนเพื่อนร่วมเล่นกีฬา ติวหนังสือ ท่องเที่ยว และทำจิตอาสาในมหาวิทยาลัยกับ UniMate">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="UniMate">
+    <meta property="og:title" content="UniMate · หาเพื่อนร่วมกิจกรรมในมหาวิทยาลัย">
+    <meta property="og:description" content="เริ่มจากกิจกรรมที่ชอบ แล้วไปเจอเพื่อนใหม่">
+    <meta property="og:image" content="{{ asset('images/web/og/unimate-og.png') }}">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="ภาพกระดาษนักศึกษาร่วมกิจกรรมหลากหลายหมวดหมู่">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="{{ asset('images/web/og/unimate-og.png') }}">
 
     {{-- ฟอนต์ สี และคลาสส่วนกลาง (ปุ่ม การ์ด ฟอร์ม แท็บ) อยู่ใน partials/theme --}}
     @include('partials.theme')

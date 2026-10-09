@@ -19,11 +19,8 @@
 <header class="sticky top-0 z-40 px-3 pt-3 sm:px-4">
     <div class="mx-auto flex h-16 max-w-[76rem] items-center gap-2 rounded-full border border-line/80 bg-white/80 pl-4 pr-2 shadow-soft backdrop-blur-md">
         <a href="{{ route('home') }}" class="flex shrink-0 items-center gap-2.5 rounded-full pr-2" aria-label="UniMate หน้าแรก">
-            <span class="relative grid h-9 w-9 place-items-center rounded-xl bg-night text-lg font-semibold text-white">
-                U
-                <span class="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-sun ring-2 ring-white"></span>
-            </span>
-            <span class="text-xl font-medium tracking-tight text-ink">UniMate</span>
+            <x-ui.brand-mark class="h-9 w-9" />
+            <span class="text-lg font-medium tracking-tight text-ink sm:text-xl">UniMate</span>
         </a>
 
         @auth

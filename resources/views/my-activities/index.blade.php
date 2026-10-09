@@ -68,7 +68,7 @@
             </div>
         @else
             <div class="flex flex-col items-center rounded-card border border-dashed border-line-strong bg-white/60 px-6 py-10 text-center text-ink-muted">
-                <x-ui.icon name="calendar" class="h-7 w-7" />
+                <x-ui.empty-art name="empty-my-activities" />
                 <p class="mt-3">คุณยังไม่ได้สร้างกิจกรรม</p>
                 <a href="{{ route('activities.create') }}" class="btn btn-primary btn-sm mt-4"><x-ui.icon name="plus" class="h-4 w-4" /> สร้างกิจกรรมใหม่</a>
             </div>
@@ -129,7 +129,7 @@
             </div>
         @else
             <div class="flex flex-col items-center rounded-card border border-dashed border-line-strong bg-white/60 px-6 py-10 text-center text-ink-muted">
-                <x-ui.icon name="search" class="h-7 w-7" />
+                <x-ui.empty-art name="empty-search" />
                 <p class="mt-3">คุณยังไม่ได้ขอเข้าร่วมกิจกรรมใด</p>
                 <a href="{{ route('activities.index') }}" class="btn btn-secondary btn-sm mt-4">ค้นหากิจกรรม</a>
             </div>
