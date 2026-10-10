@@ -9,6 +9,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
 
 class ActivityController extends Controller
 {
@@ -19,7 +20,7 @@ class ActivityController extends Controller
             'location' => ['nullable', 'string', 'max:255'],
             'category_id' => ['nullable', 'integer', 'exists:categories,id'],
             'date' => ['nullable', 'date_format:Y-m-d'],
-            'status' => ['nullable', 'in:published,cancelled,all'],
+            'status' => ['nullable', 'in:available,full,all'],
         ]);
         $now = now();
         // ดึงเจ้าของและหมวดหมู่ล่วงหน้า ลด query ซ้ำเมื่อแสดงการ์ดกิจกรรมแต่ละใบ
@@ -32,9 +33,12 @@ class ActivityController extends Controller
             ->orderByRaw('CASE WHEN ends_at < ? THEN NULL ELSE starts_at END', [$now])
             ->orderByRaw('CASE WHEN ends_at < ? THEN starts_at END DESC', [$now])
             ->orderBy('id');
-        $status = $filters['status'] ?? 'published';
+        $status = $filters['status'] ?? 'available';
         if ($status !== 'all') {
-            $query->where('status', $status);
+            // เฉพาะกิจกรรมที่ยังรับคำขอได้ นับเฉพาะผู้ที่อนุมัติแล้ว ไม่รวมคำขอรออนุมัติ
+            $query->where('status', 'published')->where('starts_at', '>', $now);
+            $approvedCount = "SELECT COUNT(*) FROM activity_participants WHERE activity_participants.activity_id = activities.id AND activity_participants.status = 'approved'";
+            $query->whereRaw('('.$approvedCount.') '.($status === 'full' ? '>=' : '<').' activities.capacity');
         }
         if (! empty($filters['q'])) {
             // ครอบ OR ด้วยวงเล็บ เพื่อให้ทั้งชื่อและรายละเอียดอยู่ภายใต้ตัวกรองอื่นด้วย
@@ -64,7 +68,10 @@ class ActivityController extends Controller
 
     public function store(SaveActivityRequest $request): RedirectResponse
     {
-        $activity = new Activity($request->validated());
+        $activity = new Activity($request->safe()->except(['location_image', 'remove_location_image', 'starts_at_date', 'starts_at_time', 'ends_at_date', 'ends_at_time']));
+        if ($request->hasFile('location_image')) {
+            $activity->location_image_path = $request->file('location_image')->store('activity-locations', 'public');
+        }
         // กำหนดเจ้าของและสถานะที่เซิร์ฟเวอร์ ไม่รับค่าที่ผู้ใช้ปลอมส่งมาจากฟอร์ม
         $activity->user()->associate($request->user());
         $activity->status = 'published';
@@ -110,7 +117,22 @@ class ActivityController extends Controller
     {
         // SaveActivityRequest ตรวจสิทธิ์เจ้าของก่อนเข้าเมธอดนี้ ทั้งคำขอ PUT และ PATCH
         abort_if($activity->status === 'cancelled', 409, 'กิจกรรมนี้ถูกยกเลิกแล้ว');
-        $activity->update($request->validated());
+        $oldImage = $activity->location_image_path;
+        $activity->fill($request->safe()->except(['location_image', 'remove_location_image', 'starts_at_date', 'starts_at_time', 'ends_at_date', 'ends_at_time']));
+        if ($request->has('google_maps_url')) {
+            // เมื่อเจ้าของเปลี่ยนหรือล้างลิงก์ ให้เลิกใช้หมุดเดิมของโพสต์ด้วย
+            $activity->latitude = null;
+            $activity->longitude = null;
+        }
+        if ($request->hasFile('location_image')) {
+            $activity->location_image_path = $request->file('location_image')->store('activity-locations', 'public');
+        } elseif ($request->boolean('remove_location_image')) {
+            $activity->location_image_path = null;
+        }
+        $activity->save();
+        if ($oldImage && $oldImage !== $activity->location_image_path) {
+            Storage::disk('public')->delete($oldImage);
+        }
 
         return redirect()->route('activities.show', $activity)->with('success', 'แก้ไขกิจกรรมเรียบร้อยแล้ว');
     }

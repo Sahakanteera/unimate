@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Carbon\CarbonImmutable;
+use Illuminate\Foundation\Console\ServeCommand;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\ServiceProvider;
@@ -15,7 +16,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // artisan serve ต้องส่งโฟลเดอร์ Temp ของ Windows ไปให้ PHP ที่รับไฟล์อัปโหลด
+        if (PHP_OS_FAMILY === 'Windows') {
+            ServeCommand::$passthroughVariables = array_unique([
+                ...ServeCommand::$passthroughVariables,
+                'TEMP', 'TMP', 'TMPDIR',
+            ]);
+        }
     }
 
     /**

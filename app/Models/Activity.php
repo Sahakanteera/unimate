@@ -11,11 +11,24 @@ class Activity extends Model
 {
     // ไม่เปิด user_id/status ให้ mass assignment; Controller เป็นผู้กำหนดสองค่านี้
     // capacity คือจำนวนที่รับเพิ่ม ไม่ใช่ยอดผู้เข้าร่วมจริงและไม่รวมผู้ประกาศ
-    protected $fillable = ['category_id', 'title', 'description', 'location', 'starts_at', 'ends_at', 'capacity'];
+    protected $fillable = ['category_id', 'title', 'description', 'location', 'google_maps_url', 'starts_at', 'ends_at', 'capacity'];
 
     protected function casts(): array
     {
-        return ['starts_at' => 'datetime', 'ends_at' => 'datetime', 'capacity' => 'integer', 'hidden_at' => 'datetime'];
+        return ['starts_at' => 'datetime', 'ends_at' => 'datetime', 'capacity' => 'integer', 'hidden_at' => 'datetime', 'latitude' => 'float', 'longitude' => 'float'];
+    }
+
+    public function googleMapsUrl(): ?string
+    {
+        if ($this->google_maps_url) {
+            return $this->google_maps_url;
+        }
+        // โพสต์เก่าที่บันทึกหมุดไว้ ยังเปิดจุดนัดพบผ่าน Google Maps ได้
+        if ($this->latitude !== null && $this->longitude !== null) {
+            return 'https://www.google.com/maps/dir/?api=1&destination='.$this->latitude.','.$this->longitude;
+        }
+
+        return null;
     }
 
     /** @return HasMany<Review, $this> */

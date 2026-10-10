@@ -48,7 +48,7 @@ test('the activities list shows upcoming activities before ended ones', function
     uiActivity($host, 'กิจกรรมที่จบไปแล้ว', now()->subDays(3), now()->subDays(3)->addHours(2));
     uiActivity($host, 'กิจกรรมที่กำลังจะมาถึง', now()->addDays(3), now()->addDays(3)->addHours(2));
 
-    $this->actingAs(uiUser('ui-viewer@unimate.test'))->get(route('activities.index'))
+    $this->actingAs(uiUser('ui-viewer@unimate.test'))->get(route('activities.index', ['status' => 'all']))
         ->assertOk()
         ->assertSeeInOrder(['กิจกรรมที่กำลังจะมาถึง', 'กิจกรรมที่จบไปแล้ว']);
 });

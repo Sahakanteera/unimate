@@ -220,6 +220,19 @@
         <section id="details" class="card mt-5 scroll-mt-40 p-6 sm:p-8">
             <h2 class="section-title">รายละเอียดกิจกรรม</h2>
             <p class="break-anywhere mt-3 whitespace-pre-wrap leading-relaxed text-ink-soft">{{ $activity->description }}</p>
+            @if($activity->location_image_path)
+                <figure class="mt-5">
+                    <img src="{{ asset('storage/'.$activity->location_image_path) }}" alt="รูปสถานที่: {{ $activity->location }}" class="max-h-96 w-full rounded-tile object-contain" loading="lazy">
+                    <figcaption class="mt-2 text-sm text-ink-muted">{{ $activity->location }}</figcaption>
+                </figure>
+            @endif
+            @if($activity->googleMapsUrl())
+                <div class="mt-5">
+                    <h3 class="font-medium">จุดนัดพบบนแผนที่</h3>
+                    <p class="mt-2 font-medium text-ink">{{ $activity->location }}</p>
+                    <a href="{{ $activity->googleMapsUrl() }}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm mt-3">เปิดสถานที่ใน Google Maps</a>
+                </div>
+            @endif
             <dl class="mt-6 grid gap-3 border-t border-line pt-5 text-sm sm:grid-cols-2">
                 <div><dt class="text-ink-muted">เวลาเริ่ม (เวลาไทย)</dt><dd class="mt-0.5 font-medium tabular-nums text-ink">{{ $start->isoFormat('dd D MMM YYYY') }} · {{ $activity->starts_at->format('H:i') }}</dd></div>
                 <div><dt class="text-ink-muted">เวลาสิ้นสุด (เวลาไทย)</dt><dd class="mt-0.5 font-medium tabular-nums text-ink">{{ $end->isoFormat('dd D MMM YYYY') }} · {{ $activity->ends_at->format('H:i') }}</dd></div>

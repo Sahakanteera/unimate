@@ -36,7 +36,7 @@ test('owner can publish search view edit and cancel an activity', function () {
     $this->patch(route('activities.cancel', $this->activity))->assertRedirect();
     expect($this->activity->fresh()->status)->toBe('cancelled');
     $this->get(route('activities.index'))->assertDontSee('ชวนเล่นแบดมินตัน');
-    $this->get(route('activities.index', ['status' => 'cancelled']))->assertSee('ชวนเล่นแบดมินตัน');
+    $this->get(route('activities.index', ['status' => 'all']))->assertSee('ชวนเล่นแบดมินตัน');
     $this->get(route('activities.show', $this->activity))->assertSee('กิจกรรมนี้ถูกยกเลิกแล้ว');
     $this->get(route('activities.edit', $this->activity))->assertStatus(409);
     $this->put(route('activities.update', $this->activity), $this->payload)->assertStatus(409);
@@ -62,7 +62,7 @@ test('invalid activity fields are rejected', function (string $field, mixed $val
 
 test('all filters narrow results and description search cannot bypass other filters', function () {
     $this->actingAs($this->owner);
-    foreach ([['q' => 'ไม่มีคำนี้'], ['location' => 'ห้องสมุด'], ['date' => '2000-01-01'], ['status' => 'cancelled']] as $filters) {
+    foreach ([['q' => 'ไม่มีคำนี้'], ['location' => 'ห้องสมุด'], ['date' => '2000-01-01'], ['status' => 'full']] as $filters) {
         $this->get(route('activities.index', $filters))->assertOk()->assertDontSee($this->activity->title);
     }
     $otherCategory = Category::create(['name' => 'ดนตรี']);

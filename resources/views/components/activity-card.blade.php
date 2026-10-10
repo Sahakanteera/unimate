@@ -22,8 +22,12 @@
     'group relative flex flex-col card transition duration-300 ease-out-expo hover:-translate-y-0.5 hover:shadow-lift has-[a:focus-visible]:ring-4 has-[a:focus-visible]:ring-brand-600/25',
     'opacity-80 hover:opacity-100' => $closed,
 ]) }}>
-    {{-- หัวการ์ดเป็นสัญลักษณ์ของหมวด (ไม่ใช่ภาพถ่าย) เพราะกิจกรรมหมวดเดียวกันหลายใบจะได้ภาพซ้ำและอาจไม่ตรงเรื่อง เช่น วิ่งกับแบดมินตัน --}}
-    <x-ui.category-art :category="$activity->category->name" :tint="$tint" :muted="$closed" class="rounded-t-card" />
+    {{-- ใช้รูปสถานที่ที่ผู้จัดอัปโหลด หรือแสดงภาพหมวดหมู่เมื่อไม่มีรูป --}}
+    @if($activity->location_image_path)
+        <img src="{{ asset('storage/'.$activity->location_image_path) }}" alt="รูปสถานที่: {{ $activity->location }}" class="h-40 w-full rounded-t-card object-cover" loading="lazy">
+    @else
+        <x-ui.category-art :category="$activity->category->name" :tint="$tint" :muted="$closed" class="rounded-t-card" />
+    @endif
     <div class="flex items-start gap-4 px-5">
         <x-ui.date-tile :date="$activity->starts_at" tint="bg-white" class="relative -mt-7 shadow-soft ring-1 ring-line" />
         <div class="min-w-0 flex-1 pt-4">

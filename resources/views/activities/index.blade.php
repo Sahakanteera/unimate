@@ -9,7 +9,7 @@
         ["หาเพื่อน\nไปปลูกป่าชายเลน", 'bg-tint-mint', 'right-8 top-12 rotate-6'],
         ["แจมดนตรีเย็นนี้\nใครเล่นกีตาร์ได้?", 'bg-tint-lilac', 'right-20 bottom-8 -rotate-3'],
     ];
-    $advancedOpen = request()->filled('location') || request()->filled('date') || request('status', 'published') !== 'published';
+    $advancedOpen = request()->filled('location') || request()->filled('date') || request('status', 'available') !== 'available';
     $hasFilters = $advancedOpen || request()->filled('q') || request()->filled('category_id');
     // ระหว่างค้นหาหรือเปิดหน้าถัดไป ย่อส่วนหัวลง ให้ผลลัพธ์ขึ้นมาใกล้ขอบบน
     $compact = $hasFilters || $activities->currentPage() > 1;
@@ -68,8 +68,8 @@
                     <div>
                         <label for="status" class="field-label">สถานะ</label>
                         <select id="status" name="status" class="field">
-                            <option value="published" @selected(request('status', 'published') === 'published')>ประกาศแล้ว</option>
-                            <option value="cancelled" @selected(request('status') === 'cancelled')>ยกเลิกแล้ว</option>
+                            <option value="available" @selected(request('status', 'available') === 'available')>ยังว่างอยู่</option>
+                            <option value="full" @selected(request('status') === 'full')>เต็มแล้ว</option>
                             <option value="all" @selected(request('status') === 'all')>ทั้งหมด</option>
                         </select>
                     </div>
@@ -96,7 +96,7 @@
 <section class="mt-10" aria-labelledby="results-heading">
     <div class="mb-5 flex flex-wrap items-end justify-between gap-3">
         <div>
-            <h2 id="results-heading" class="text-xl font-medium text-ink">{{ $hasFilters ? 'ผลการค้นหา' : 'กิจกรรมทั้งหมด' }}</h2>
+            <h2 id="results-heading" class="text-xl font-medium text-ink">{{ $hasFilters ? 'ผลการค้นหา' : 'กิจกรรมที่ยังว่างอยู่' }}</h2>
             <p class="mt-1 text-sm tabular-nums text-ink-muted">พบ {{ $activities->total() }} กิจกรรม{{ $activities->lastPage() > 1 ? ' · หน้า '.$activities->currentPage().' จาก '.$activities->lastPage() : '' }}</p>
         </div>
         @if($hasFilters)
