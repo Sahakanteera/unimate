@@ -1,7 +1,8 @@
-{{-- หัวข้อหน้าผู้ดูแลระบบ + แท็บสลับ 3 หน้า admin ใช้: @include('admin.partials.header', ['title' => '...', 'description' => '...']) --}}
+{{-- หัวข้อหน้าผู้ดูแลระบบ + แท็บสลับ 4 หน้า admin ใช้: @include('admin.partials.header', ['title' => '...', 'description' => '...']) --}}
 @php
     $pendingReportCount = \App\Models\Report::where('status', 'pending')->count();
     $adminTabs = [
+        ['admin.insights.index', 'admin.insights.*', 'ภาพรวมข้อมูล', 'ภาพรวม', 'chart-bar'],
         ['admin.users.index', 'admin.users.*', 'จัดการผู้ใช้งาน', 'ผู้ใช้', 'users'],
         ['admin.categories.index', 'admin.categories.*', 'จัดการหมวดหมู่', 'หมวดหมู่', 'squares'],
         ['admin.reports.index', 'admin.reports.*', 'ตรวจรายงาน', 'รายงาน', 'flag'],

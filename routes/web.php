@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\InsightsController;
 use App\Http\Controllers\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\AuthController;
@@ -64,6 +65,9 @@ Route::middleware(['auth', 'active'])->group(function () {
 });
 
 Route::middleware(['auth', 'active', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    // ภาพรวมข้อมูล (วิเคราะห์การใช้งานระบบ) ดู docs/admin-insights-plan-th.md
+    Route::get('/insights', [InsightsController::class, 'index'])->name('insights.index');
+    Route::get('/insights/export', [InsightsController::class, 'export'])->name('insights.export');
     Route::resource('categories', CategoryController::class)->only(['index', 'store', 'update', 'destroy']);
     Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
     Route::post('/users/{user}/toggle-status', [AdminUserController::class, 'toggleStatus'])->name('users.toggle-status');
