@@ -85,28 +85,30 @@ test('error messages stay on screen while success messages hide themselves', fun
     expect($openingTag($success->getContent(), 'flash-success'))->toContain('data-autohide');
 });
 
-test('cards use category art and only the detail page shows the labelled category photo', function () {
+test('list and detail pages use the category icon art', function () {
     $activity = uiActivity(uiUser('ui-cover-host@unimate.test'), 'วิ่งรอบอ่างตอนเช้า', now()->addDays(2), now()->addDays(2)->addHours(2));
     $this->actingAs(uiUser('ui-cover-viewer@unimate.test'));
 
-    // ภาพถ่ายหมวดเดียวซ้ำทุกการ์ดและอาจไม่ตรงเรื่อง หน้ารวมจึงใช้ไอคอนประจำหมวด
-    $this->get(route('activities.index'))->assertOk()
-        ->assertSee('images/web/categories/sports-192.webp', false)
-        ->assertDontSee('images/web/photos/activities/', false);
-
-    $this->get(route('activities.show', $activity))->assertOk()
-        ->assertSee('images/web/photos/activities/sports-640.webp', false)
-        ->assertSee('ภาพประกอบหมวดกีฬา');
+    foreach ([route('activities.index'), route('activities.show', $activity)] as $url) {
+        $this->get($url)->assertOk()
+            ->assertSee('images/web/categories/sports-192.webp', false)
+            ->assertDontSee('images/web/photos/', false);
+    }
 });
 
-test('categories without their own photo fall back to the icon art', function () {
+test('categories added later fall back to the generic icon', function () {
     $activity = uiActivity(uiUser('ui-cover-host2@unimate.test'), 'กิจกรรมถ่ายภาพ', now()->addDays(2), now()->addDays(2)->addHours(2));
     $activity->category->update(['name' => 'ถ่ายภาพ']);
     $this->actingAs(uiUser('ui-cover-viewer2@unimate.test'));
 
     $this->get(route('activities.show', $activity))->assertOk()
-        ->assertSee('images/web/categories/other-192.webp', false)
-        ->assertDontSee('images/web/photos/activities/', false);
+        ->assertSee('images/web/categories/other-192.webp', false);
+});
+
+test('auth pages show the note board instead of photos', function () {
+    $this->get(route('login'))->assertOk()
+        ->assertSee('images/web/categories/sports-192.webp', false)
+        ->assertDontSee('images/web/photos/', false);
 });
 
 test('missing pages show the custom recovery page for guests', function () {

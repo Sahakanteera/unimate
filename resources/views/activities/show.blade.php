@@ -50,7 +50,7 @@
 <div class="mt-4 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-8">
     {{-- ส่วนหัว: หมวดหมู่ ชื่อ ผู้ประกาศ และตัวเลขสำคัญ (แบบการ์ดโปรไฟล์ของ fastwork) --}}
     <header class="card min-w-0 lg:col-start-1 lg:row-start-1">
-        <x-ui.activity-cover :category="$activity->category->name" :tint="$tint" sizes="(min-width: 1280px) 824px, (min-width: 1024px) 60vw, 100vw" class="rounded-t-card" />
+        <x-ui.category-art :category="$activity->category->name" :tint="$tint" size="lg" class="rounded-t-card" />
         <div class="p-6 sm:p-8">
         <div class="flex items-start gap-4">
             <x-ui.date-tile :date="$activity->starts_at" :tint="$tint" class="hidden sm:flex" />

@@ -32,17 +32,6 @@ class Ui
         return 'images/web/categories/'.self::categorySlug($name).($size > 96 ? '-192' : '').'.webp';
     }
 
-    /**
-     * ภาพถ่ายประกอบของหมวด (ไม่รวมนามสกุลและขนาด) หรือ null ถ้าหมวดนี้ไม่มีภาพของตัวเอง
-     * ภาพถ่ายเป็นบรรยากาศของทั้งหมวด จึงใช้เฉพาะหน้ารายละเอียด ไม่ใช้ซ้ำบนการ์ดทุกใบ
-     */
-    public static function categoryPhoto(?string $name): ?string
-    {
-        $slug = self::CATEGORY_SLUGS[trim($name ?? '')] ?? null;
-
-        return $slug ? 'images/web/photos/activities/'.$slug : null;
-    }
-
     /** สีพาสเทลแบบโพสต์อิทของ fastwork ใช้แยกหมวดหมู่และอักษรย่อผู้ใช้ */
     public const TINTS = ['bg-tint-mint', 'bg-tint-aqua', 'bg-tint-lilac', 'bg-tint-coral', 'bg-tint-butter', 'bg-tint-peach'];
 

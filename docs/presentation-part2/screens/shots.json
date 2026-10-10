@@ -1,0 +1,225 @@
+{
+ "newId": "12",
+ "log": [
+  {
+   "name": "g01-login",
+   "url": "/login",
+   "note": "หน้าเข้าสู่ระบบ"
+  },
+  {
+   "name": "g02-register",
+   "url": "/register",
+   "note": "หน้าสมัครสมาชิก"
+  },
+  {
+   "name": "g03-register-errors",
+   "url": "/register",
+   "note": "สมัครสมาชิกไม่ผ่านการตรวจข้อมูล"
+  },
+  {
+   "name": "g04-login-suspended",
+   "url": "/login",
+   "note": "บัญชีถูกระงับเข้าสู่ระบบไม่ได้"
+  },
+  {
+   "name": "s01-activities",
+   "url": "/activities",
+   "note": "รายการกิจกรรม"
+  },
+  {
+   "name": "s01b-activities-cards",
+   "url": "/activities",
+   "note": "การ์ดกิจกรรม"
+  },
+  {
+   "name": "s02-activities-filter",
+   "url": "/activities?category_id=2&q=%E0%B8%AA%E0%B8%AD%E0%B8%9A",
+   "note": "ค้นหาและกรอง"
+  },
+  {
+   "name": "s03-create",
+   "url": "/activities/create",
+   "note": "ฟอร์มสร้างกิจกรรม"
+  },
+  {
+   "name": "s04-create-errors",
+   "url": "/activities/create",
+   "note": "ตรวจข้อมูลไม่ผ่าน"
+  },
+  {
+   "name": "s05-created-owner",
+   "url": "/activities/12",
+   "note": "สร้างสำเร็จ หน้ารายละเอียดของเจ้าของ"
+  },
+  {
+   "name": "s06-edit",
+   "url": "/activities/12/edit",
+   "note": "แก้ไขกิจกรรม"
+  },
+  {
+   "name": "s07-detail-join",
+   "url": "/activities/9",
+   "note": "รายละเอียดและฟอร์มขอเข้าร่วม"
+  },
+  {
+   "name": "s08-join-pending",
+   "url": "/activities/9",
+   "note": "ส่งคำขอแล้ว รออนุมัติ"
+  },
+  {
+   "name": "s09-requests-pending",
+   "url": "/activities/3/requests",
+   "note": "คำขอรออนุมัติ"
+  },
+  {
+   "name": "s10-request-approved",
+   "url": "/activities/3/requests",
+   "note": "อนุมัติคำขอแล้ว"
+  },
+  {
+   "name": "s11-requests-attendance",
+   "url": "/activities/3/requests?status=approved",
+   "note": "สมาชิกที่อนุมัติและเช็กชื่อ"
+  },
+  {
+   "name": "s12-attendance-saved",
+   "url": "/activities/3/requests?status=approved",
+   "note": "บันทึกเช็กชื่อ"
+  },
+  {
+   "name": "s13-cancelled",
+   "url": "/activities/10",
+   "note": "กิจกรรมที่ถูกยกเลิก"
+  },
+  {
+   "name": "s14-my-activities",
+   "url": "/my-activities",
+   "note": "กิจกรรมของฉัน"
+  },
+  {
+   "name": "s14b-my-activities-joined",
+   "url": "/my-activities",
+   "note": "กิจกรรมที่ขอเข้าร่วม"
+  },
+  {
+   "name": "s15-notifications",
+   "url": "/notifications",
+   "note": "การแจ้งเตือน"
+  },
+  {
+   "name": "s16-profile",
+   "url": "/profile",
+   "note": "โปรไฟล์"
+  },
+  {
+   "name": "s16b-profile-edit",
+   "url": "/profile",
+   "note": "แก้ไขโปรไฟล์"
+  },
+  {
+   "name": "s17-ended-detail",
+   "url": "/activities/11",
+   "note": "กิจกรรมที่จบแล้ว"
+  },
+  {
+   "name": "s18-reviews-form",
+   "url": "/activities/11",
+   "note": "รีวิวและฟอร์มรีวิว"
+  },
+  {
+   "name": "s19-review-sent",
+   "url": "/activities/11",
+   "note": "ส่งรีวิวแล้ว"
+  },
+  {
+   "name": "s20-report-form",
+   "url": "/activities/5",
+   "note": "ฟอร์มรายงาน"
+  },
+  {
+   "name": "s21-report-sent",
+   "url": "/activities/5",
+   "note": "ส่งรายงานแล้ว"
+  },
+  {
+   "name": "s22-403",
+   "url": "/admin/users",
+   "note": "นักศึกษาเข้าหน้า Admin ไม่ได้"
+  },
+  {
+   "name": "s23-404",
+   "url": "/activities/99999",
+   "note": "ไม่พบหน้า"
+  },
+  {
+   "name": "a01-users",
+   "url": "/admin/users",
+   "note": "จัดการผู้ใช้"
+  },
+  {
+   "name": "a01b-users-table",
+   "url": "/admin/users",
+   "note": "ตารางผู้ใช้"
+  },
+  {
+   "name": "a02-users-search",
+   "url": "/admin/users?search=%E0%B9%81%E0%B8%9E%E0%B8%A3%E0%B8%A7&status=",
+   "note": "ค้นหาผู้ใช้"
+  },
+  {
+   "name": "a03-user-suspended",
+   "url": "/admin/users?search=%E0%B9%81%E0%B8%9E%E0%B8%A3%E0%B8%A7&status=",
+   "note": "ระงับบัญชี"
+  },
+  {
+   "name": "a04-categories",
+   "url": "/admin/categories",
+   "note": "จัดการหมวดหมู่"
+  },
+  {
+   "name": "a05-category-added",
+   "url": "/admin/categories",
+   "note": "เพิ่มหมวดหมู่"
+  },
+  {
+   "name": "a06-reports",
+   "url": "/admin/reports",
+   "note": "รายงานรอตรวจ"
+  },
+  {
+   "name": "a07-report-resolved",
+   "url": "/admin/reports",
+   "note": "ดำเนินการรายงาน"
+  },
+  {
+   "name": "a08-reports-all",
+   "url": "/admin/reports?status=all",
+   "note": "รายงานทั้งหมด"
+  },
+  {
+   "name": "a09-moderation-log",
+   "url": "/admin/reports?status=all",
+   "note": "ประวัติการดำเนินการ"
+  },
+  {
+   "name": "a10-hidden-activity",
+   "url": "/activities/5",
+   "note": "กิจกรรมที่ถูกซ่อน"
+  },
+  {
+   "name": "m01-mobile-activities",
+   "url": "/activities",
+   "note": "มือถือ: รายการกิจกรรม"
+  },
+  {
+   "name": "m02-mobile-detail",
+   "url": "/activities/4",
+   "note": "มือถือ: รายละเอียด"
+  },
+  {
+   "name": "m03-mobile-my",
+   "url": "/my-activities",
+   "note": "มือถือ: กิจกรรมของฉัน"
+  }
+ ]
+}

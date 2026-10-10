@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UniMate ส่วนที่ 2 — CP410805</title>
+<link rel="stylesheet" href="deck.css">
+<style>
+/* === SLIDE-SPECIFIC LAYOUTS === */
+
+/* 01 title */
+.s-title .name { position: absolute; left: 96px; top: 214px; }
+.s-title .sub { position: absolute; left: 100px; top: 440px; font-size: 58px; width: 1040px; }
+.s-title .members { position: absolute; left: 96px; top: 636px; width: 1030px; padding: 20px 32px 14px; }
+.s-title .members h3 { font-family: var(--f-display); font-weight: 400; font-size: 30px; line-height: 1.3; display: flex; justify-content: space-between; align-items: baseline; }
+.s-title .members ol { list-style: none; margin-top: 8px; }
+.s-title .members li { font-size: 25px; line-height: 1.4; padding: 5px 0; border-top: 3px solid var(--ink); display: flex; gap: 18px; }
+.s-title .members li b { font-family: var(--f-mono); font-weight: 600; min-width: 34px; }
+.s-title .members li .sid { margin-left: auto; font-family: var(--f-mono); font-size: 22px; letter-spacing: 0.04em; padding-top: 3px; }
+.s-title .poster { position: absolute; left: 1290px; top: 196px; width: 500px; height: 500px; display: grid; place-items: center; }
+.s-title .poster img { width: 330px; height: 330px; }
+.s-title .cats { position: absolute; left: 1290px; top: 780px; display: flex; gap: 16px; }
+.s-title .cats div { width: 108px; height: 108px; border: 4px solid var(--ink); background: var(--cream-2); display: grid; place-items: center; }
+.s-title .cats img { width: 84px; height: 84px; }
+
+/* shared headline block */
+.hl { position: absolute; left: 96px; right: 96px; top: 140px; }
+.hl .kicker { margin-bottom: 22px; }
+
+/* 02 problem */
+.s-problem .cards { position: absolute; left: 96px; right: 96px; top: 580px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+.s-problem .cards .cell { height: 284px; }
+.s-problem .example { position: absolute; left: 96px; right: 96px; top: 900px; padding: 14px 28px; font-size: 27px; line-height: 1.5; display: flex; gap: 24px; align-items: center; }
+.s-problem .example .label { color: var(--yellow); flex: none; }
+
+/* 03 solution */
+.s-solution .pillars { position: absolute; left: 96px; top: 470px; width: 760px; display: grid; gap: 22px; }
+.s-solution .pillar { display: grid; grid-template-columns: 170px 1fr; align-items: center; border: 4px solid var(--ink); }
+.s-solution .pillar .w { font-family: var(--f-display); font-size: 62px; line-height: 1.2; text-align: center; padding: 14px 0 10px; border-right: 4px solid var(--ink); align-self: stretch; display: grid; place-items: center; }
+.s-solution .pillar p { padding: 16px 26px; font-size: 26px; line-height: 1.45; }
+.s-solution .shot { position: absolute; left: 930px; top: 300px; width: 876px; height: 600px; }
+
+/* 04 objectives */
+.s-obj .grid { position: absolute; left: 96px; right: 96px; top: 400px; display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+.s-obj .cell { height: 250px; display: grid; grid-template-columns: 120px 1fr; gap: 24px; align-items: start; }
+.s-obj .cell .big { font-family: var(--f-display); font-size: 110px; line-height: 0.9; }
+.s-obj .cell h3 { font-size: 36px; }
+
+/* 05 roles */
+.s-roles .grid { position: absolute; left: 96px; right: 96px; top: 400px; display: grid; grid-template-columns: 0.8fr 1.1fr 1.1fr; gap: 28px; }
+.s-roles .cell { height: 440px; }
+.s-roles .cell .who { font-family: var(--f-mono); font-size: 22px; letter-spacing: 0.12em; text-transform: uppercase; }
+.s-roles .strip { position: absolute; left: 96px; right: 96px; top: 880px; padding: 14px 28px; font-size: 26px; line-height: 1.45; }
+
+/* 06-08 function slides */
+.s-fn .grid6 { position: absolute; left: 96px; right: 96px; top: 380px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.s-fn .grid6 .cell { height: 268px; padding: 24px 28px; }
+.s-fn .grid6 .cell h3 { font-size: 36px; }
+.s-fn .grid6 .cell p { font-size: 25px; }
+.s-fn .steps { position: absolute; left: 96px; top: 380px; width: 820px; display: grid; gap: 18px; }
+.s-fn .steps .cell { padding: 20px 28px; display: grid; grid-template-columns: 70px 1fr; gap: 18px; }
+.s-fn .steps .cell .idx { font-size: 52px; margin: 0; }
+.s-fn .steps .cell h3 { font-size: 34px; }
+.s-fn .steps .cell p { font-size: 24px; margin-top: 4px; }
+.s-fn .shot { position: absolute; left: 990px; top: 380px; width: 816px; height: 560px; }
+
+/* 09 flow */
+.s-flow .row { position: absolute; left: 96px; right: 96px; top: 430px; display: flex; gap: 14px; }
+.s-flow .row .cell { flex: 1; height: 360px; padding: 22px 22px; display: flex; flex-direction: column; }
+.s-flow .row .cell .n { font-family: var(--f-display); font-size: 92px; line-height: 0.95; }
+.s-flow .row .cell h3 { font-size: 34px; margin-top: 18px; }
+.s-flow .row .cell p { font-size: 23px; margin-top: auto; line-height: 1.45; }
+.s-flow .rail { position: absolute; left: 96px; right: 96px; top: 850px; border-top: 3px dashed var(--ink); padding-top: 22px; display: flex; gap: 40px; font-size: 26px; line-height: 1.45; }
+.s-flow .rail .label { flex: none; }
+
+/* 10 scope */
+.s-scope .cols { position: absolute; left: 96px; right: 96px; top: 360px; display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 32px; }
+.s-scope .cell { height: 500px; padding: 26px 34px; }
+.s-scope .cell h3 { font-size: 40px; display: flex; justify-content: space-between; align-items: center; }
+.s-scope .cell .list li { font-size: 26px; margin-top: 11px; }
+
+/* 11 rules */
+.s-rules .tbl { position: absolute; left: 96px; top: 330px; width: 1728px; }
+.s-rules .tbl td { font-size: 24px; padding: 11px 22px; }
+.s-rules .tbl td:first-child { width: 58%; }
+.s-rules .tbl td.code { font-family: var(--f-mono); font-size: 21px; letter-spacing: 0.02em; }
+
+/* 12 stack */
+.s-stack .layers { position: absolute; left: 96px; top: 340px; width: 1060px; display: grid; gap: 14px; }
+.s-stack .layer { display: grid; grid-template-columns: 300px 1fr; border: 4px solid var(--ink); }
+.s-stack .layer .k { padding: 18px 22px; border-right: 4px solid var(--ink); font-family: var(--f-display); font-size: 30px; line-height: 1.25; }
+.s-stack .layer .v { padding: 16px 24px; font-size: 24px; line-height: 1.45; background: var(--cream); }
+.s-stack .learn { position: absolute; left: 1220px; top: 340px; width: 604px; padding: 28px 32px; }
+.s-stack .learn h3 { font-size: 36px; }
+.s-stack .learn .list li { font-size: 24px; margin-top: 10px; }
+
+/* 13 database */
+.s-db .er { position: absolute; left: 96px; right: 96px; top: 346px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+.s-db .t { border: 4px solid var(--ink); background: var(--cream); height: 226px; }
+.s-db .t h4 { font-family: var(--f-mono); font-weight: 600; font-size: 23px; letter-spacing: 0.03em; padding: 10px 18px; border-bottom: 4px solid var(--ink); }
+.s-db .t ul { list-style: none; padding: 10px 18px; }
+.s-db .t li { font-family: var(--f-mono); font-size: 20px; line-height: 1.6; letter-spacing: 0.01em; color: var(--ink-2); }
+.s-db .rels { position: absolute; left: 96px; right: 96px; top: 860px; padding: 18px 28px; display: flex; gap: 28px; align-items: baseline; font-family: var(--f-mono); font-size: 22px; line-height: 1.6; letter-spacing: 0.02em; }
+.s-db .rels .label { color: var(--yellow); flex: none; }
+
+/* 14 testing */
+.s-test .stats { position: absolute; left: 96px; top: 360px; width: 760px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.s-test .stats .cell { height: 250px; }
+.s-test .stats .v { font-family: var(--f-display); font-size: 130px; line-height: 1; }
+.s-test .stats .k { font-size: 26px; margin-top: 12px; }
+.s-test .stats .wide { grid-column: 1 / -1; height: auto; padding: 20px 28px; font-size: 24px; line-height: 1.5; }
+.s-test .files { position: absolute; left: 920px; top: 360px; width: 904px; }
+.s-test .files .tbl td { font-size: 23px; padding: 12px 20px; }
+.s-test .files .tbl td:first-child { font-family: var(--f-mono); font-size: 20px; width: 300px; letter-spacing: 0.02em; }
+
+/* 15 demo */
+.s-demo .list-demo { position: absolute; left: 96px; top: 320px; width: 1180px; display: grid; gap: 12px; }
+.s-demo .d { display: grid; grid-template-columns: 76px 1fr 230px; border: 4px solid var(--ink); align-items: stretch; }
+.s-demo .d .n { font-family: var(--f-display); font-size: 40px; display: grid; place-items: center; border-right: 4px solid var(--ink); line-height: 1; padding-top: 4px; }
+.s-demo .d .t { padding: 12px 22px; font-size: 25px; line-height: 1.4; }
+.s-demo .d .t b { font-family: var(--f-display); font-weight: 400; font-size: 29px; }
+.s-demo .d .who { border-left: 4px solid var(--ink); display: grid; place-items: center; font-family: var(--f-mono); font-size: 19px; letter-spacing: 0.06em; text-align: center; padding: 6px; }
+.s-demo .acc { position: absolute; left: 1340px; top: 320px; width: 484px; padding: 26px 30px; }
+.s-demo .acc h3 { font-size: 34px; }
+.s-demo .acc dl { margin-top: 14px; }
+.s-demo .acc dt { font-family: var(--f-body); font-weight: 600; font-size: 24px; margin-top: 14px; }
+.s-demo .acc dd { font-family: var(--f-mono); font-size: 21px; letter-spacing: 0.02em; }
+
+/* 16 closing */
+.s-close { background: var(--green); color: var(--cream); }
+.s-close .topbar .pill { border-color: var(--cream); }
+.s-close .big { position: absolute; left: 96px; top: 250px; color: var(--cream); }
+.s-close .strap { position: absolute; left: 100px; top: 640px; width: 1160px; font-size: 32px; line-height: 1.55; }
+.s-close .stamp { left: 1430px; top: 290px; }
+.s-close .stamp .inner { color: var(--cream); }
+</style>
+</head>
+<body>
+<div class="deck-viewport">
+<main class="deck-stage" id="deckStage">
+
+<!-- ===================== 01 TITLE ===================== -->
+<section class="slide s-title">
+    <div class="topbar"><span>CP410805 · Web Application Development</span><span class="pill">Part 2 · 15.10.2026</span></div>
+    <span class="kicker th reveal" style="position:absolute;left:96px;top:150px;--d:0">โครงงานส่วนที่ 2 · เว็บแอปพลิเคชันที่พัฒนาเสร็จ</span>
+    <h1 class="d-jumbo name reveal" style="--d:1">UniMate</h1>
+    <p class="d-xs sub reveal" style="--d:2;text-transform:none">เว็บแอปจับกลุ่มหาเพื่อน<br>ร่วมทำกิจกรรมในมหาวิทยาลัย</p>
+    <div class="box bg-cream2 members reveal" style="--d:3">
+        <h3><span>สมาชิกกลุ่ม</span><span class="en" style="font-size:22px">Group AI04 · Sec 1</span></h3>
+        <ol>
+            <!--MEMBERS-->
+        </ol>
+    </div>
+    <div class="box bg-pink shadow-lg poster reveal" style="--d:2"><img src="img/unimate-mark.svg" alt="โลโก้ UniMate"></div>
+    <span class="badge pop" style="left:1180px;top:640px;--d:4">Laravel 13 + SQLite</span>
+    <div class="cats reveal" style="--d:5">
+        <div><img src="img/sports-192.webp" alt=""></div>
+        <div><img src="img/tutoring-192.webp" alt=""></div>
+        <div><img src="img/travel-192.webp" alt=""></div>
+        <div><img src="img/volunteer-192.webp" alt=""></div>
+    </div>
+    <div class="meta"><span>UniMate · <span class="th">ระบบหาเพื่อนร่วมกิจกรรม</span></span><span class="num">01 <i class="dot"></i> 16</span></div>
+</section>
+
+<!-- ===================== 02 PROBLEM (หลักการและเหตุผล) ===================== -->
+<section class="slide s-problem">
+    <div class="topbar"><span>01 — <span class="th">หลักการและเหตุผล</span></span><span class="pill">Why</span></div>
+    <div class="hl">
+        <span class="kicker th reveal" style="--d:0">ที่มาของปัญหา</span>
+        <h2 class="d-lg reveal" style="--d:1">กิจกรรมมีทุกวัน<br>แต่การหาเพื่อนยังไม่เป็นระบบ</h2>
+    </div>
+    <p class="lede reveal" style="position:absolute;left:96px;top:478px;--d:2">โพสต์ชวนกันกระจายอยู่หลายกลุ่มแชต ข้อมูลเวลา สถานที่ และจำนวนคนไม่ครบ ตัดสินใจยากและนัดล่มง่าย</p>
+    <div class="cards">
+        <div class="cell reveal" style="--d:3"><span class="idx">01</span><h3>ข้อมูลกระจัดกระจาย</h3><p>ต้องไล่อ่านหลายกลุ่ม โพสต์เก่าถูกดันหายเร็ว ค้นย้อนหลังไม่ได้</p></div>
+        <div class="cell bg-pink reveal" style="--d:4"><span class="idx">02</span><h3>จัดคนไม่ลงตัว</h3><p>ไม่รู้ว่ายังขาดกี่คน ใครยืนยันแล้ว และใครยังรอคำตอบ</p></div>
+        <div class="cell bg-yellow reveal" style="--d:5"><span class="idx">03</span><h3>ขาดความน่าเชื่อถือ</h3><p>ไม่มีประวัติว่าใครมาจริง และไม่มีช่องทางแจ้งเมื่อเจอปัญหา</p></div>
+    </div>
+    <div class="example bg-ink reveal" style="--d:6"><span class="label">ตัวอย่าง</span><span>“เล่นบาส 18:00 สนามกลาง ขาดอีก 4 คน” … แล้วใครจะมาแน่?</span></div>
+    <div class="meta"><span>UniMate · Part 2</span><span class="num">02 <i class="dot"></i> 16</span></div>
+</section>
+
+<!-- ===================== 03 SOLUTION ===================== -->
+<section class="slide s-solution">
+    <div class="topbar"><span>01 — <span class="th">แนวคิดของระบบ</span></span><span class="pill">Idea</span></div>
+    <div class="hl" style="right:1040px">
+        <span class="kicker th reveal" style="--d:0">UniMate แก้อย่างไร</span>
+        <h2 class="d-md reveal" style="--d:1">รวม หา · นัด · เชื่อใจ ไว้ในที่เดียว</h2>
+    </div>
+    <div class="pillars">
+        <div class="pillar reveal" style="--d:2"><span class="w bg-yellow">หา</span><p>ค้นหาด้วยคำค้น กรองหมวดหมู่ สถานที่ วันที่ และสถานะ</p></div>
+        <div class="pillar reveal" style="--d:3"><span class="w bg-pink">นัด</span><p>ส่งคำขอเข้าร่วม ผู้จัดอนุมัติไม่เกินจำนวนที่รับ แล้วเช็กชื่อ</p></div>
+        <div class="pillar reveal" style="--d:4"><span class="w bg-green">เชื่อใจ</span><p>รีวิวได้เฉพาะคนที่มาจริง และรายงานปัญหาให้ผู้ดูแลตรวจ</p></div>
+    </div>
+    <div class="shot reveal" style="--d:3"><div class="bar"><i></i><i></i><i></i><span>/activities</span></div><img src="../screens/s01-activities.jpg" alt="หน้ารายการกิจกรรม" style="height:550px"></div>
+    <span class="badge pop" style="left:1520px;top:250px;--d:6">หน้าจริงของระบบ</span>
+    <div class="meta"><span>UniMate · Part 2</span><span class="num">03 <i class="dot"></i> 16</span></div>
+</section>
+
+<!-- ===================== 04 OBJECTIVES ===================== -->
+<section class="slide s-obj">
+    <div class="topbar"><span>02 — <span class="th">วัตถุประสงค์</span></span><span class="pill">Objectives</span></div>
+    <div class="hl">
+        <span class="kicker th reveal" style="--d:0">วัตถุประสงค์ของโครงงาน</span>
+        <h2 class="d-lg reveal" style="--d:1">จับคู่ได้เร็วขึ้น นัดแล้วเชื่อถือได้</h2>
+    </div>
+    <div class="grid">
+        <div class="cell reveal" style="--d:2"><span class="big">1</span><div><h3>รวมกิจกรรมไว้ในที่เดียว</h3><p>ให้นักศึกษาค้นหาและเปรียบเทียบกิจกรรมในมหาวิทยาลัยได้จากหน้าเดียว</p></div></div>
+        <div class="cell bg-yellow reveal" style="--d:3"><span class="big">2</span><div><h3>รับสมาชิกอย่างโปร่งใส</h3><p>เห็นจำนวนที่รับ ที่ว่าง สถานะคำขอ และรายชื่อผู้เข้าร่วม</p></div></div>
+        <div class="cell bg-pink reveal" style="--d:4"><span class="big">3</span><div><h3>ลดปัญหาการนัดล่ม</h3><p>ยืนยันการเข้าร่วม เช็กชื่อ และให้คะแนนหลังจบกิจกรรม</p></div></div>
+        <div class="cell bg-green reveal" style="--d:5"><span class="big">4</span><div><h3>ใช้งานได้จริงตามข้อกำหนด</h3><p>พัฒนาด้วย Laravel กับฐานข้อมูล SQLite/MySQL และแบ่งสิทธิ์ผู้ใช้มากกว่า 1 ระดับ</p></div></div>
+    </div>
+    <div class="meta"><span>UniMate · Part 2</span><span class="num">04 <i class="dot"></i> 16</span></div>
+</section>
+
+<!-- ===================== 05 ROLES ===================== -->
+<section class="slide s-roles">
+    <div class="topbar"><span>03 — <span class="th">ผู้ใช้งาน</span></span><span class="pill">Roles</span></div>
+    <div class="hl">
+        <span class="kicker th reveal" style="--d:0">ฟังก์ชันระบบแบ่งตามผู้ใช้งาน</span>
+        <h2 class="d-lg reveal" style="--d:1">ผู้ใช้ 3 กลุ่ม สิทธิ์ต่างกันชัดเจน</h2>
+    </div>
+    <div class="grid">
+        <div class="cell reveal" style="--d:2"><span class="who">Guest</span><h3>ผู้ยังไม่เข้าสู่ระบบ</h3>
+            <ul class="list"><li>สมัครสมาชิกนักศึกษา</li><li>เข้าสู่ระบบ</li><li>บัญชีที่ถูกระงับเข้าระบบไม่ได้</li></ul></div>
+        <div class="cell bg-yellow reveal" style="--d:3"><span class="who">Student</span><h3>นักศึกษา</h3>
+            <ul class="list"><li>ค้นหา ขอเข้าร่วม ติดตามนัดของฉัน</li><li>สร้างและจัดการกิจกรรมของตัวเอง</li><li>อนุมัติคำขอ เช็กชื่อผู้เข้าร่วม</li><li>รีวิว รายงาน แจ้งเตือน โปรไฟล์</li></ul></div>
+        <div class="cell bg-pink reveal" style="--d:4"><span class="who">Admin</span><h3>ผู้ดูแลระบบ</h3>
+            <ul class="list"><li>ดูสถิติและค้นหาบัญชีผู้ใช้</li><li>ระงับ / เปิดใช้งานบัญชี</li><li>เพิ่ม แก้ไข ลบหมวดหมู่</li><li>ตรวจรายงาน ซ่อนกิจกรรม บันทึกประวัติ</li></ul></div>
+    </div>
+    <div class="strip bg-ink reveal" style="--d:5">นักศึกษาหนึ่งบัญชีเป็นได้ทั้ง “ผู้จัด” และ “ผู้เข้าร่วม” · สิทธิ์ตรวจด้วย Middleware และ Policy ที่เซิร์ฟเวอร์ เปิด URL ตรงก็ได้ 403</div>
+    <div class="meta"><span>UniMate · Part 2</span><span class="num">05 <i class="dot"></i> 16</span></div>
+</section>
+
+<!-- ===================== 06 STUDENT AS PARTICIPANT ===================== -->
+<section class="slide s-fn">
+    <div class="topbar"><span>03 — <span class="th">ฟังก์ชันนักศึกษา</span></span><span class="pill">Student · <span class="th">ผู้เข้าร่วม</span></span></div>
+    <div class="hl">
+        <span class="kicker th reveal" style="--d:0">นักศึกษาในฐานะผู้เข้าร่วม</span>
+        <h2 class="d-lg reveal" style="--d:1">ค้นหา ขอเข้าร่วม แล้วติดตามนัด</h2>
+    </div>
+    <div class="grid6">
+        <div class="cell reveal" style="--d:2"><span class="idx">01</span><h3>ค้นหาและกรอง</h3><p>คำค้น หมวดหมู่ สถานที่ วันที่ สถานะ แบ่งหน้าละ 12 รายการ</p></div>
+        <div class="cell reveal" style="--d:3"><span class="idx">02</span><h3>ดูรายละเอียด</h3><p>วันเวลา สถานที่ ที่ว่าง ผู้จัด และคะแนนรีวิว</p></div>
+        <div class="cell bg-yellow reveal" style="--d:4"><span class="idx">03</span><h3>ขอเข้าร่วม</h3><p>ส่งคำขอพร้อมข้อความถึงผู้จัด ถอนคำขอหรือถอนตัวได้</p></div>
+        <div class="cell reveal" style="--d:5"><span class="idx">04</span><h3>นัดของฉัน</h3><p>รวมกิจกรรมที่สร้างและที่ขอเข้าร่วม พร้อมสถานะแต่ละรายการ</p></div>
+        <div class="cell reveal" style="--d:6"><span class="idx">05</span><h3>แจ้งเตือน</h3><p>แจ้งผลอนุมัติ/ปฏิเสธคำขอ และผลการตรวจรายงาน</p></div>
+        <div class="cell bg-green reveal" style="--d:7"><span class="idx">06</span><h3>โปรไฟล์</h3><p>แก้ชื่อ รหัสนักศึกษา Bio รูปโปรไฟล์ และรหัสผ่าน</p></div>
+    </div>
+    <div class="meta"><span>UniMate · Part 2</span><span class="num">06 <i class="dot"></i> 16</span></div>
+</section>
+
+<!-- ===================== 07 STUDENT AS ORGANIZER ===================== -->
+<section class="slide s-fn">
+    <div class="topbar"><span>03 — <span class="th">ฟังก์ชันนักศึกษา</span></span><span class="pill">Student · <span class="th">ผู้จัด</span></span></div>
+    <div class="hl">
+        <span class="kicker th reveal" style="--d:0">นักศึกษาในฐานะผู้จัดกิจกรรม</span>
+        <h2 class="d-lg reveal" style="--d:1">สร้างโพสต์ รับคน และเช็กชื่อ</h2>
+    </div>
+    <div class="steps">
+        <div class="cell reveal" style="--d:2"><span class="idx">1</span><div><h3>สร้าง / แก้ไขโพสต์</h3><p>ชื่อ หมวด สถานที่ เวลาเริ่ม–จบ และจำนวนคนที่รับ</p></div></div>
+        <div class="cell reveal" style="--d:3"><span class="idx">2</span><div><h3>ยกเลิกกิจกรรม</h3><p>เก็บไว้เป็นประวัติ และแก้ไขต่อไม่ได้</p></div></div>
+        <div class="cell bg-pink reveal" style="--d:4"><span class="idx">3</span><div><h3>อนุมัติ / ปฏิเสธคำขอ</h3><p>อนุมัติได้ไม่เกินจำนวนที่รับ ผู้ขอได้รับแจ้งเตือน</p></div></div>
+        <div class="cell bg-yellow reveal" style="--d:5"><span class="idx">4</span><div><h3>เช็กชื่อ มา / ขาด</h3><p>เฉพาะคนที่อนุมัติแล้ว ใช้เป็นเงื่อนไขการรีวิว</p></div></div>
+    </div>
+    <div class="shot reveal" style="--d:3"><div class="bar"><i></i><i></i><i></i><span>/activities/3/requests</span></div><img src="../screens/s09-requests-pending.jpg" alt="หน้าจัดการคำขอเข้าร่วม" style="height:510px"></div>
+    <div class="meta"><span>UniMate · Part 2</span><span class="num">07 <i class="dot"></i> 16</span></div>
+</section>
+
+<!-- ===================== 08 ADMIN ===================== -->
+<section class="slide s-fn">
+    <div class="topbar"><span>03 — <span class="th">ฟังก์ชันผู้ดูแลระบบ</span></span><span class="pill">Admin</span></div>
+    <div class="hl">
+        <span class="kicker th reveal" style="--d:0">ผู้ดูแลระบบ</span>
+        <h2 class="d-lg reveal" style="--d:1">ดูแลบัญชี หมวดหมู่ และรายงาน</h2>
+    </div>
+    <div class="steps">
+        <div class="cell reveal" style="--d:2"><span class="idx">1</span><div><h3>จัดการผู้ใช้</h3><p>สถิติสมาชิก ค้นหา กรองสถานะ ระงับหรือเปิดใช้งานบัญชี</p></div></div>
+        <div class="cell reveal" style="--d:3"><span class="idx">2</span><div><h3>จัดการหมวดหมู่</h3><p>เพิ่ม เปลี่ยนชื่อ ลบได้เฉพาะหมวดที่ยังไม่มีกิจกรรม</p></div></div>
+        <div class="cell bg-pink reveal" style="--d:4"><span class="idx">3</span><div><h3>ตรวจรายงาน</h3><p>ซ่อนกิจกรรม ระงับผู้ใช้ หรือยกรายงาน ต้องบันทึกเหตุผลทุกครั้ง</p></div></div>
+        <div class="cell bg-green reveal" style="--d:5"><span class="idx">4</span><div><h3>ประวัติการดำเนินการ</h3><p>ย้อนดูได้ว่าใครทำอะไร และแจ้งผลกลับไปยังผู้รายงาน</p></div></div>
+    </div>
+    <div class="shot reveal" style="--d:3"><div class="bar"><i></i><i></i><i></i><span>/admin/reports</span></div><img src="../screens/a06-reports.jpg" alt="หน้าตรวจรายงาน" style="height:510px"></div>
+    <div class="meta"><span>UniMate · Part 2</span><span class="num">08 <i class="dot"></i> 16</span></div>
+</section>
+
+<!-- ===================== 09 FLOW ===================== -->
+<section class="slide s-flow">
+    <div class="topbar"><span>03 — <span class="th">ลำดับการทำงาน</span></span><span class="pill">Flow</span></div>
+    <div class="hl">
+        <span class="kicker th reveal" style="--d:0">หนึ่งกิจกรรมตั้งแต่ต้นจนจบ</span>
+        <h2 class="d-lg reveal" style="--d:1">จากโพสต์ ถึงรีวิว ใน 6 ขั้น</h2>
+    </div>
+    <div class="row">
+        <div class="cell reveal" style="--d:2"><span class="n">01</span><h3>สร้างโพสต์</h3><p>ผู้จัดกำหนดวัน เวลา สถานที่ จำนวนคน</p></div>
+        <i class="arrow reveal" style="--d:2"></i>
+        <div class="cell reveal" style="--d:3"><span class="n">02</span><h3>ค้นหา</h3><p>นักศึกษากรองหมวดหมู่ สถานที่ วันที่</p></div>
+        <i class="arrow reveal" style="--d:3"></i>
+        <div class="cell bg-yellow reveal" style="--d:4"><span class="n">03</span><h3>ขอเข้าร่วม</h3><p>สถานะ “รออนุมัติ” แนบข้อความได้</p></div>
+        <i class="arrow reveal" style="--d:4"></i>
+        <div class="cell bg-pink reveal" style="--d:5"><span class="n">04</span><h3>อนุมัติ</h3><p>ไม่เกินจำนวนที่รับ ผู้ขอได้แจ้งเตือน</p></div>
+        <i class="arrow reveal" style="--d:5"></i>
+        <div class="cell reveal" style="--d:6"><span class="n">05</span><h3>เช็กชื่อ</h3><p>ผู้จัดบันทึก มา / ขาด</p></div>
+        <i class="arrow reveal" style="--d:6"></i>
+        <div class="cell bg-green reveal" style="--d:7"><span class="n">06</span><h3>รีวิว</h3><p>หลังจบกิจกรรม เฉพาะคนที่มาจริง</p></div>
+    </div>
+    <div class="rail reveal" style="--d:8"><span class="label th">ทุกขั้นตอน</span><span>พบปัญหา <i class="ar" role="img" aria-label="ไปยัง"></i> รายงานกิจกรรมหรือผู้ใช้ <i class="ar" role="img" aria-label="ไปยัง"></i> ผู้ดูแลตรวจ ซ่อน/ระงับ/ยกรายงาน <i class="ar" role="img" aria-label="ไปยัง"></i> แจ้งผลผู้รายงาน</span></div>
+    <div class="meta"><span>UniMate · Part 2</span><span class="num">09 <i class="dot"></i> 16</span></div>
+</section>
+
+<!-- ===================== 10 SCOPE ===================== -->
+<section class="slide s-scope">
+    <div class="topbar"><span>04 — <span class="th">ขอบเขตระบบ</span></span><span class="pill">Scope</span></div>
+    <div class="hl">
+        <span class="kicker th reveal" style="--d:0">ขอบเขตระบบ</span>
+        <h2 class="d-lg reveal" style="--d:1">ทำอะไรได้ และไม่ได้ทำอะไร</h2>
+    </div>
+    <div class="cols">
+        <div class="cell bg-cream2 reveal" style="--d:2"><h3><span>อยู่ในขอบเขต</span><span class="en" style="font-size:22px">In scope</span></h3>
+            <ul class="list">
+                <li>บัญชี 2 บทบาท (นักศึกษา / ผู้ดูแลระบบ) และการระงับบัญชี</li>
+                <li>โพสต์กิจกรรม: สร้าง แก้ไข ยกเลิก ค้นหา กรอง</li>
+                <li>คำขอเข้าร่วม อนุมัติ / ปฏิเสธ จำกัดตามจำนวนที่รับ</li>
+                <li>เช็กชื่อ นัดของฉัน และการแจ้งเตือนภายในเว็บ</li>
+                <li>รีวิวหลังจบกิจกรรม รายงานปัญหา และการตรวจของผู้ดูแล</li>
+                <li>ใช้งานผ่านเว็บเบราว์เซอร์ ทั้งคอมพิวเตอร์และมือถือ</li>
+            </ul></div>
+        <div class="cell bg-pink reveal" style="--d:3"><h3><span>ไม่อยู่ในขอบเขต</span><span class="en" style="font-size:22px">Out</span></h3>
+            <ul class="list">
+                <li>ซื้อขายสินค้าและชำระเงิน (ข้อห้ามของวิชา)</li>
+                <li>แชตระหว่างผู้ใช้</li>
+                <li>แจ้งเตือนทางอีเมลหรือพุช</li>
+                <li>อัปโหลดรูปกิจกรรม และแผนที่</li>
+                <li>เชื่อมบัญชีมหาวิทยาลัย / แอปมือถือ</li>
+            </ul></div>
+    </div>
+    <div class="meta"><span>UniMate · Part 2</span><span class="num">10 <i class="dot"></i> 16</span></div>
+</section>
+
+<!-- ===================== 11 RULES ===================== -->
+<section class="slide s-rules">
+    <div class="topbar"><span>04 — <span class="th">ขอบเขตระบบ</span></span><span class="pill">Rules</span></div>
+    <div class="hl">
+        <span class="kicker th reveal" style="--d:0">กฎที่ระบบบังคับใช้</span>
+        <h2 class="d-md reveal" style="--d:1">ตรวจที่เซิร์ฟเวอร์ ไม่ใช่แค่ซ่อนปุ่ม</h2>
+    </div>
+    <table class="tbl reveal" style="--d:2">
+        <thead><tr><th>กฎ</th><th>ผลลัพธ์เมื่อฝ่าฝืน / กลไก</th></tr></thead>
+        <tbody>
+            <tr><td>แก้ไขหรือยกเลิกโพสต์ได้เฉพาะเจ้าของ</td><td>ผู้อื่น (รวม Admin) ได้ 403 · ActivityPolicy</td></tr>
+            <tr><td>กิจกรรมที่ยกเลิกแล้วแก้ไขต่อไม่ได้</td><td>ได้ 409</td></tr>
+            <tr><td>ขอเข้าร่วมได้เมื่อยังไม่เริ่ม ไม่ใช่โพสต์ตัวเอง ไม่ถูกซ่อน และยังไม่เต็ม</td><td>ปุ่มไม่แสดง และเซิร์ฟเวอร์ปฏิเสธ</td></tr>
+            <tr><td>อนุมัติเกินจำนวนที่รับไม่ได้ แม้กดพร้อมกัน</td><td>DB transaction + lockForUpdate</td></tr>
+            <tr><td>เช็กชื่อได้เฉพาะผู้ที่อนุมัติแล้ว</td><td>แจ้งข้อผิดพลาด ไม่บันทึก</td></tr>
+            <tr><td>รีวิวได้ครั้งเดียว หลังกิจกรรมจบ และต้องถูกเช็กชื่อว่า “มา”</td><td>แจ้งเหตุผล · unique (activity, user)</td></tr>
+            <tr><td>รายงานตัวเองไม่ได้ และรายงานซ้ำระหว่างรอตรวจไม่ได้</td><td>แจ้งข้อผิดพลาด</td></tr>
+            <tr><td>บัญชีที่ถูกระงับเข้าสู่ระบบไม่ได้</td><td>ถูกออกจากระบบ · Middleware active</td></tr>
+        </tbody>
+    </table>
+    <div class="meta"><span>UniMate · Part 2</span><span class="num">11 <i class="dot"></i> 16</span></div>
+</section>
+
+<!-- ===================== 12 STACK ===================== -->
+<section class="slide s-stack">
+    <div class="topbar"><span>05 — <span class="th">เทคโนโลยี</span></span><span class="pill">Laravel</span></div>
+    <div class="hl">
+        <span class="kicker th reveal" style="--d:0">โครงสร้างระบบ</span>
+        <h2 class="d-md reveal" style="--d:1">หนึ่งคำขอ ผ่าน Laravel อย่างไร</h2>
+    </div>
+    <div class="layers">
+        <div class="layer reveal" style="--d:2"><span class="k bg-yellow">หน้าเว็บ</span><span class="v">Blade layout + components · Tailwind CSS · JavaScript (toast, เปิด-ปิดรหัสผ่าน, ย่อรูปโปรไฟล์ด้วย Canvas)</span></div>
+        <div class="layer reveal" style="--d:3"><span class="k">Routes</span><span class="v">Resource routes · Middleware <span class="mono">auth</span> · <span class="mono">active</span> · <span class="mono">admin</span> · CSRF ทุกฟอร์ม</span></div>
+        <div class="layer reveal" style="--d:4"><span class="k bg-pink">Controllers</span><span class="v">Form Request validation · Policy / Gate ตรวจเจ้าของ · Notifications</span></div>
+        <div class="layer reveal" style="--d:5"><span class="k">Models</span><span class="v">Eloquent: belongsTo / hasMany · casts วันเวลา · helper เช่น isFull(), reviewBlockReason()</span></div>
+        <div class="layer reveal" style="--d:6"><span class="k bg-green">Database</span><span class="v">SQLite ผ่าน migrations + seeders · เปลี่ยนเป็น MySQL ได้จาก .env</span></div>
+    </div>
+    <div class="learn box bg-cream2 reveal" style="--d:4">
+        <h3 class="d-card">นำสิ่งที่เรียนมาใช้</h3>
+        <ul class="list">
+            <li>HTML / CSS: โครงหน้า ฟอร์ม และ layout ที่รองรับมือถือ</li>
+            <li>JavaScript: โต้ตอบในหน้า โดยไม่ต้องโหลดใหม่</li>
+            <li>PHP + Laravel: routing, controller, Blade, validation</li>
+            <li>Eloquent ORM: ความสัมพันธ์ระหว่างตาราง</li>
+            <li>Authentication และการแบ่งสิทธิ์ผู้ใช้</li>
+        </ul>
+    </div>
+    <div class="meta"><span>UniMate · Part 2</span><span class="num">12 <i class="dot"></i> 16</span></div>
+</section>
+
+<!-- ===================== 13 DATABASE ===================== -->
+<section class="slide s-db">
+    <div class="topbar"><span>05 — <span class="th">ฐานข้อมูล</span></span><span class="pill">Schema</span></div>
+    <div class="hl">
+        <span class="kicker th reveal" style="--d:0">ฐานข้อมูลของระบบ</span>
+        <h2 class="d-md reveal" style="--d:1">8 ตารางหลัก เชื่อมกันด้วย Eloquent</h2>
+    </div>
+    <div class="er">
+        <div class="t reveal bg-yellow" style="--d:2"><h4>users</h4><ul><li>name, student_id, email</li><li>role: student | admin</li><li>status: active | suspended</li></ul></div>
+        <div class="t reveal" style="--d:2"><h4 class="bg-pink">activities</h4><ul><li>user_id <i class="ar" role="img" aria-label="ไปยัง"></i> users</li><li>category_id <i class="ar" role="img" aria-label="ไปยัง"></i> categories</li><li>starts_at, ends_at, capacity</li><li>status, hidden_at</li></ul></div>
+        <div class="t reveal" style="--d:3"><h4>categories</h4><ul><li>name (unique)</li><li>ลบได้เมื่อไม่มีกิจกรรม</li></ul></div>
+        <div class="t reveal" style="--d:3"><h4>activity_participants</h4><ul><li>activity_id, user_id (unique)</li><li>status: pending · approved</li><li>· rejected · cancelled</li><li>attendance: present | absent</li></ul></div>
+        <div class="t reveal" style="--d:4"><h4>reviews</h4><ul><li>activity_id, user_id (unique)</li><li>rating 1–5, comment</li></ul></div>
+        <div class="t reveal" style="--d:4"><h4>reports</h4><ul><li>reporter_id <i class="ar" role="img" aria-label="ไปยัง"></i> users</li><li>target: activity | user</li><li>status, admin_note</li></ul></div>
+        <div class="t reveal" style="--d:5"><h4>moderation_logs</h4><ul><li>admin_id <i class="ar" role="img" aria-label="ไปยัง"></i> users</li><li>report_id <i class="ar" role="img" aria-label="ไปยัง"></i> reports</li><li>action, reason</li></ul></div>
+        <div class="t reveal" style="--d:5"><h4>notifications</h4><ul><li>notifiable <i class="ar" role="img" aria-label="ไปยัง"></i> users</li><li>data, read_at</li></ul></div>
+    </div>
+    <div class="rels bg-ink reveal" style="--d:6">
+        <span class="label">Relations</span>
+        <span>users 1:N activities · categories 1:N activities · activities 1:N participants N:1 users · activities 1:N reviews · users 1:N reports <i class="ar" role="img" aria-label="ไปยัง"></i> moderation_logs</span>
+    </div>
+    <div class="meta"><span>UniMate · Part 2</span><span class="num">13 <i class="dot"></i> 16</span></div>
+</section>
+
+<!-- ===================== 14 TESTING ===================== -->
+<section class="slide s-test">
+    <div class="topbar"><span>05 — <span class="th">การทดสอบ</span></span><span class="pill">Pest</span></div>
+    <div class="hl">
+        <span class="kicker th reveal" style="--d:0">ทดสอบอัตโนมัติ</span>
+        <h2 class="d-md reveal" style="--d:1">ทุกกฎข้างต้นมีชุดทดสอบรองรับ</h2>
+    </div>
+    <div class="stats">
+        <div class="cell bg-green reveal" style="--d:2"><div class="v">52</div><div class="k">กรณีทดสอบ ผ่านทั้งหมด</div></div>
+        <div class="cell bg-yellow reveal" style="--d:3"><div class="v">216</div><div class="k">assertions</div></div>
+        <div class="cell wide bg-cream2 reveal" style="--d:4">รันด้วย <span class="mono">php artisan test</span> (Pest + SQLite ในหน่วยความจำ) เมื่อ 10 ต.ค. 2569</div>
+    </div>
+    <div class="files reveal" style="--d:3">
+        <table class="tbl">
+            <thead><tr><th>ชุดทดสอบ</th><th>ตรวจอะไร</th></tr></thead>
+            <tbody>
+                <tr><td>ActivitiesTest</td><td>สร้าง/ค้นหา/แก้ไข/ยกเลิก ปลอมเจ้าของไม่ได้ จัดการหมวดหมู่</td></tr>
+                <tr><td>ParticipationTest</td><td>ขอเข้าร่วม อนุมัติไม่เกินจำนวน เช็กชื่อ แจ้งเตือน</td></tr>
+                <tr><td>ReviewReportTest</td><td>เงื่อนไขรีวิว รายงานซ้ำ ซ่อน/เลิกซ่อน ประวัติ</td></tr>
+                <tr><td>UiStatesTest</td><td>สถานะบนหน้าจอ เช่น เต็ม จบแล้ว ยกเลิก</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="meta"><span>UniMate · Part 2</span><span class="num">14 <i class="dot"></i> 16</span></div>
+</section>
+
+<!-- ===================== 15 DEMO ORDER ===================== -->
+<section class="slide s-demo">
+    <div class="topbar"><span>06 — <span class="th">สาธิตระบบจริง</span></span><span class="pill">Live demo</span></div>
+    <div class="hl">
+        <span class="kicker th reveal" style="--d:0">ลำดับการสาธิต</span>
+        <h2 class="d-md reveal" style="--d:1">เดโมเว็บจริง 7 ขั้น</h2>
+    </div>
+    <div class="list-demo">
+        <div class="d reveal" style="--d:2"><span class="n bg-yellow">1</span><span class="t"><b>เข้าสู่ระบบ</b> · บัญชีที่ถูกระงับเข้าไม่ได้</span><span class="who">GUEST</span></div>
+        <div class="d reveal" style="--d:3"><span class="n">2</span><span class="t"><b>ค้นหา + ขอเข้าร่วม</b> · กรองหมวด แล้วส่งคำขอ</span><span class="who">STUDENT</span></div>
+        <div class="d reveal" style="--d:4"><span class="n bg-pink">3</span><span class="t"><b>สร้างโพสต์</b> · ลองส่งฟอร์มว่างให้เห็นการตรวจข้อมูล</span><span class="who">STUDENT</span></div>
+        <div class="d reveal" style="--d:5"><span class="n">4</span><span class="t"><b>อนุมัติ + เช็กชื่อ</b> · หน้าจัดการคำขอ</span><span class="who">ผู้จัด</span></div>
+        <div class="d reveal" style="--d:6"><span class="n bg-yellow">5</span><span class="t"><b>รีวิว + รายงาน</b> · กิจกรรมที่จบแล้ว</span><span class="who">ผู้เข้าร่วม</span></div>
+        <div class="d reveal" style="--d:7"><span class="n">6</span><span class="t"><b>เปิด /admin/users</b> ด้วยบัญชีนักศึกษา <i class="ar" role="img" aria-label="ไปยัง"></i> 403</span><span class="who">STUDENT</span></div>
+        <div class="d reveal" style="--d:8"><span class="n bg-green">7</span><span class="t"><b>ตรวจรายงาน</b> · ซ่อนกิจกรรม แล้วดูประวัติ</span><span class="who">ADMIN</span></div>
+    </div>
+    <div class="acc box bg-cream2 reveal" style="--d:4">
+        <h3 class="d-card">บัญชีทดสอบ</h3>
+        <dl>
+            <dt>นักศึกษา</dt><dd>student@unimate.ac.th</dd>
+            <dt>ผู้เข้าร่วมที่เช็กชื่อแล้ว</dt><dd>attendee@unimate.ac.th</dd>
+            <dt>บัญชีถูกระงับ</dt><dd>suspended@unimate.ac.th</dd>
+            <dt>ผู้ดูแลระบบ</dt><dd>admin@unimate.ac.th</dd>
+        </dl>
+        <p class="body-md muted" style="margin-top:18px">รหัสผ่านอยู่ใน UserSeeder</p>
+    </div>
+    <div class="meta"><span>UniMate · Part 2</span><span class="num">15 <i class="dot"></i> 16</span></div>
+</section>
+
+<!-- ===================== 16 CLOSING ===================== -->
+<section class="slide s-close">
+    <div class="topbar"><span>UniMate · <span class="th">กลุ่ม</span> AI04</span><span class="pill">Q &amp; A</span></div>
+    <h2 class="d-hero big reveal" style="--d:0">ขอบคุณ<br>ถามได้เลย</h2>
+    <p class="strap reveal" style="--d:2">UniMate ช่วยให้นักศึกษาหาเพื่อนร่วมกิจกรรม นัดได้ชัดเจน และเชื่อถือกันได้ — ภาพหน้าจอการทำงานทั้งหมดอยู่ในภาคผนวกที่ส่งใน Classroom</p>
+    <div class="stamp pop" style="--d:3"><div class="inner">Uni<br>Mate</div></div>
+    <div class="meta"><span>CP410805 · Part 2</span><span class="num">16 <i class="dot"></i> 16</span></div>
+</section>
+
+</main>
+</div>
+<div class="progress"></div>
+<div class="counter"></div>
+<div class="edit-hotzone"></div>
+<button class="edit-toggle" id="editToggle" title="แก้ไขข้อความ (E)">แก้ไขข้อความ (E)</button>
+<script src="deck.js"></script>
+</body>
+</html>
