@@ -9,10 +9,11 @@
         'description' => 'บริหารจัดการผู้ใช้งานในระบบ ตรวจสอบสถานะ และกดระงับบัญชีผู้กระทำผิดกฎ',
     ])
 
-    <dl class="grid grid-cols-2 gap-3 md:grid-cols-4">
+    <dl class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         @foreach([
             ['สมาชิกทั้งหมด', $stats['total'], 'text-ink', 'users', 'bg-tint-aqua'],
             ['นักศึกษา (Students)', $stats['students'], 'text-ink', 'id-card', 'bg-tint-lilac'],
+            ['ผู้ดูแลระบบ (Admins)', $stats['admins'], 'text-brand-700', 'shield', 'bg-tint-butter'],
             ['เปิดใช้งาน (Active)', $stats['active'], 'text-ok', 'check-circle', 'bg-tint-mint'],
             ['ถูกระงับ (Suspended)', $stats['suspended'], 'text-bad', 'ban', 'bg-tint-coral'],
         ] as [$label, $value, $color, $icon, $tint])
@@ -34,15 +35,22 @@
                 class="h-11 min-w-0 flex-1 bg-transparent pr-4 text-base caret-brand-600 outline-none placeholder:text-ink-faint sm:text-[0.9375rem]">
         </div>
 
+        <label for="user-role" class="sr-only">สิทธิ์ผู้ใช้</label>
+        <select id="user-role" name="role" onchange="this.form.submit()" class="field h-11 w-full rounded-full sm:w-48">
+            <option value="">ทุกสิทธิ์ (All Roles)</option>
+            <option value="student" {{ $roleFilter === 'student' ? 'selected' : '' }}>นักศึกษา (Student)</option>
+            <option value="admin" {{ $roleFilter === 'admin' ? 'selected' : '' }}>ผู้ดูแลระบบ (Admin)</option>
+        </select>
+
         <label for="user-status" class="sr-only">สถานะบัญชี</label>
-        <select id="user-status" name="status" onchange="this.form.submit()" class="field h-11 w-full rounded-full sm:w-56">
+        <select id="user-status" name="status" onchange="this.form.submit()" class="field h-11 w-full rounded-full sm:w-52">
             <option value="">ทุกสถานะ (All Status)</option>
             <option value="active" {{ $statusFilter === 'active' ? 'selected' : '' }}>เปิดใช้งานปกติ (Active)</option>
             <option value="suspended" {{ $statusFilter === 'suspended' ? 'selected' : '' }}>ถูกระงับ (Suspended)</option>
         </select>
 
         <button type="submit" class="btn btn-primary">ค้นหา</button>
-        @if($search || $statusFilter)
+        @if($search || $statusFilter || $roleFilter)
             <a href="{{ route('admin.users.index') }}" class="btn btn-ghost">ล้างตัวกรอง</a>
         @endif
     </form>
@@ -100,15 +108,33 @@
                             @if($u->id === Auth::id())
                                 <span class="text-xs italic text-ink-faint">(บัญชีของคุณ)</span>
                             @else
-                                <form action="{{ route('admin.users.toggle-status', $u->id) }}" method="POST" class="inline"
-                                    onsubmit="return confirm('คุณแน่ใจหรือไม่ที่จะ {{ $u->isActive() ? 'ระงับบัญชี' : 'เปิดใช้งานบัญชี' }} ของคุณ {{ $u->name }}?');">
-                                    @csrf
-                                    @if($u->isActive())
-                                        <button type="submit" class="btn btn-danger btn-sm"><x-ui.icon name="ban" class="h-4 w-4" /> ระงับบัญชี (Suspend)</button>
-                                    @else
-                                        <button type="submit" class="btn btn-success btn-sm"><x-ui.icon name="check" class="h-4 w-4" /> เปิดใช้งาน (Activate)</button>
-                                    @endif
-                                </form>
+                                <div class="inline-flex flex-wrap items-center justify-end gap-1.5">
+                                    {{-- ปุ่มสลับสิทธิ์ Admin / Student --}}
+                                    <form action="{{ route('admin.users.toggle-role', $u->id) }}" method="POST" class="inline"
+                                        onsubmit="return confirm('คุณแน่ใจหรือไม่ที่จะ{{ $u->isAdmin() ? 'ลดสิทธิ์เป็นนักศึกษา (Student)' : 'แต่งตั้งเป็นผู้ดูแลระบบ (Admin)' }} สำหรับคุณ {{ $u->name }}?');">
+                                        @csrf
+                                        @if($u->isAdmin())
+                                            <button type="submit" class="btn btn-secondary btn-sm text-xs" title="ลดสิทธิ์เป็นนักศึกษา">
+                                                <x-ui.icon name="user" class="h-3.5 w-3.5 text-ink-muted" /> ปลดเป็น Student
+                                            </button>
+                                        @else
+                                            <button type="submit" class="btn btn-secondary btn-sm text-xs text-brand-700 hover:border-brand-500 hover:bg-brand-50" title="แต่งตั้งเป็นผู้ดูแลระบบ">
+                                                <x-ui.icon name="shield" class="h-3.5 w-3.5 text-brand-600" /> ตั้งเป็น Admin
+                                            </button>
+                                        @endif
+                                    </form>
+
+                                    {{-- ปุ่มระงับ / เปิดใช้งานบัญชี --}}
+                                    <form action="{{ route('admin.users.toggle-status', $u->id) }}" method="POST" class="inline"
+                                        onsubmit="return confirm('คุณแน่ใจหรือไม่ที่จะ {{ $u->isActive() ? 'ระงับบัญชี' : 'เปิดใช้งานบัญชี' }} ของคุณ {{ $u->name }}?');">
+                                        @csrf
+                                        @if($u->isActive())
+                                            <button type="submit" class="btn btn-danger btn-sm text-xs"><x-ui.icon name="ban" class="h-3.5 w-3.5" /> ระงับบัญชี</button>
+                                        @else
+                                            <button type="submit" class="btn btn-success btn-sm text-xs"><x-ui.icon name="check" class="h-3.5 w-3.5" /> เปิดใช้งาน</button>
+                                        @endif
+                                    </form>
+                                </div>
                             @endif
                         </td>
                     </tr>
