@@ -60,6 +60,7 @@ class SaveActivityRequest extends FormRequest
             'ends_at_time' => ['sometimes', 'required', 'date_format:H:i'],
             'capacity' => ['required', 'integer', 'min:1', 'max:10000'],
         ];
+
         return $rules;
     }
 

@@ -3,7 +3,10 @@
 use App\Models\Activity;
 use App\Models\Category;
 use App\Models\User;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
@@ -57,6 +60,48 @@ test('owner can upload a location photo and maps link then replace and remove th
     $this->put(route('activities.update', $activity), [...$this->payload, 'google_maps_url' => ''])->assertRedirect();
     expect($activity->fresh()->google_maps_url)->toBeNull();
     $this->get(route('activities.show', $activity))->assertDontSee('เปิดสถานที่ใน Google Maps');
+});
+
+test('failed location photo storage does not create an activity', function () {
+    $disk = Storage::disk('public');
+    $failingDisk = Mockery::mock($disk);
+    $failingDisk->shouldReceive('putFileAs')->once()->andReturnFalse();
+    Storage::set('public', $failingDisk);
+
+    $this->actingAs($this->owner)->postJson(route('activities.store'), [
+        ...$this->payload,
+        'location_image' => UploadedFile::fake()->image('court.jpg'),
+    ])->assertStatus(503);
+
+    expect(Activity::count())->toBe(0);
+    expect($disk->allFiles())->toBe([]);
+});
+
+test('failed replacement photo storage keeps the activity and old photo', function () {
+    $this->actingAs($this->owner)->post(route('activities.store'), [
+        ...$this->payload,
+        'location_image' => UploadedFile::fake()->image('court.jpg'),
+        'google_maps_url' => 'https://maps.app.goo.gl/original',
+    ])->assertRedirect();
+    $activity = Activity::firstOrFail();
+    $oldPath = $activity->location_image_path;
+    $disk = Storage::disk('public');
+    $failingDisk = Mockery::mock($disk);
+    $failingDisk->shouldReceive('putFileAs')->once()->andReturnFalse();
+    Storage::set('public', $failingDisk);
+
+    $this->putJson(route('activities.update', $activity), [
+        ...$this->payload,
+        'title' => 'ชื่อใหม่ที่ยังไม่ควรบันทึก',
+        'location_image' => UploadedFile::fake()->image('replacement.jpg'),
+        'google_maps_url' => 'https://maps.app.goo.gl/replacement',
+    ])->assertStatus(503);
+
+    expect($activity->fresh()->title)->toBe($this->payload['title']);
+    expect($activity->fresh()->location_image_path)->toBe($oldPath);
+    expect($activity->fresh()->google_maps_url)->toBe('https://maps.app.goo.gl/original');
+    $disk->assertExists($oldPath);
+    expect($disk->allFiles())->toBe([$oldPath]);
 });
 
 test('invalid photos and non maps links are rejected', function (array $extra, string $field) {
@@ -135,7 +180,7 @@ test('photo stays attached when storage cannot delete the file', function () {
     $activity = Activity::firstOrFail();
     $path = $activity->location_image_path;
     $disk = Storage::disk('public');
-    $failingDisk = Mockery::mock(Illuminate\Filesystem\FilesystemAdapter::class);
+    $failingDisk = Mockery::mock(FilesystemAdapter::class);
     $failingDisk->shouldReceive('exists')->once()->with($path)->andReturnTrue();
     $failingDisk->shouldReceive('delete')->once()->with($path)->andReturnFalse();
     Storage::shouldReceive('disk')->with('public')->andReturn($failingDisk);
@@ -178,7 +223,7 @@ test('google maps sharing link formats are supported', function (string $url) {
 
 test('24 hour form fields save as Bangkok local time', function () {
     $date = now('Asia/Bangkok')->addDays(2)->format('Y-m-d');
-    $payload = Illuminate\Support\Arr::except($this->payload, ['starts_at', 'ends_at']);
+    $payload = Arr::except($this->payload, ['starts_at', 'ends_at']);
     $this->actingAs($this->owner)->post(route('activities.store'), [
         ...$payload, 'starts_at_date' => $date, 'starts_at_time' => '14:30',
         'ends_at_date' => $date, 'ends_at_time' => '16:00',
@@ -201,7 +246,7 @@ test('24 hour form rejects AM PM and invalid clock values', function (string $ti
 })->with(['02:30 PM', '24:00', '12:60']);
 
 test('new activity time defaults follow Bangkok time across midnight', function () {
-    $this->travelTo(Illuminate\Support\Carbon::parse('2026-10-10 23:30:00', 'Asia/Bangkok'));
+    $this->travelTo(Carbon::parse('2026-10-10 23:30:00', 'Asia/Bangkok'));
     $this->actingAs($this->owner)->get(route('activities.create'))->assertOk()
         ->assertSee('value="11/10/2026"', false)
         ->assertSee('value="00:30"', false)->assertSee('value="01:30"', false)->assertDontSee('datetime-local');
@@ -209,7 +254,7 @@ test('new activity time defaults follow Bangkok time across midnight', function 
 
 test('day month year calendar and time range persist correct Bangkok datetime', function () {
     $year = (string) (now()->year + 1);
-    $payload = Illuminate\Support\Arr::except($this->payload, ['starts_at', 'ends_at']);
+    $payload = Arr::except($this->payload, ['starts_at', 'ends_at']);
     $this->actingAs($this->owner)->post(route('activities.store'), [
         ...$payload, 'starts_at_date' => '13/04/'.$year, 'starts_at_time' => '22:33',
         'ends_at_date' => '14/04/'.$year, 'ends_at_time' => '00:15',
@@ -226,7 +271,7 @@ test('day month year calendar and time range persist correct Bangkok datetime', 
 
 test('separate hour and minute inputs save every minute and preserve leading zeros', function () {
     $date = now()->addDays(2)->format('d/m/Y');
-    $payload = Illuminate\Support\Arr::except($this->payload, ['starts_at', 'ends_at']);
+    $payload = Arr::except($this->payload, ['starts_at', 'ends_at']);
     $this->actingAs($this->owner)->post(route('activities.store'), [
         ...$payload, 'starts_at_date' => $date, 'starts_at_time_hour' => '15', 'starts_at_time_minute' => '48',
         'ends_at_date' => $date, 'ends_at_time_hour' => '16', 'ends_at_time_minute' => '7',
@@ -250,7 +295,7 @@ test('separate clock inputs reject invalid or incomplete times', function (mixed
 })->with([['24', '00'], ['15', '60'], ['-1', '30'], ['15', ''], [['15'], '30']]);
 
 test('calendar and time range reject impossible dates and invalid time values', function (array $changes, string $error) {
-    $payload = Illuminate\Support\Arr::except($this->payload, ['starts_at', 'ends_at']);
+    $payload = Arr::except($this->payload, ['starts_at', 'ends_at']);
     $year = (string) (now()->year + 1);
     $this->actingAs($this->owner)->post(route('activities.store'), [
         ...$payload, 'starts_at_date' => '13/04/'.$year, 'starts_at_time' => '14:30',

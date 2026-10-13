@@ -51,7 +51,7 @@ class UserController extends Controller
     public function toggleStatus(User $user): RedirectResponse
     {
         if ($user->id === Auth::id()) {
-            return back()->with('error', '❌ คุณไม่สามารถระงับบัญชีของตัวเองได้');
+            return back()->with('error', 'คุณไม่สามารถระงับบัญชีของตัวเองได้');
         }
 
         if ($user->status === 'active') {
@@ -65,5 +65,25 @@ class UserController extends Controller
         $user->save();
 
         return back()->with('success', $message);
+    }
+
+    public function toggleRole(Request $request, User $user): RedirectResponse
+    {
+        if ($user->id === Auth::id()) {
+            return back()->with('error', 'คุณไม่สามารถเปลี่ยนสิทธิ์บัญชีของตัวเองได้');
+        }
+
+        $targetRole = $request->input('role');
+        if ($targetRole && in_array($targetRole, ['student', 'admin'])) {
+            $user->role = $targetRole;
+        } else {
+            $user->role = $user->isAdmin() ? 'student' : 'admin';
+        }
+
+        $user->save();
+
+        $roleText = $user->isAdmin() ? 'ผู้ดูแลระบบ (Admin)' : 'นักศึกษา (Student)';
+
+        return back()->with('success', "เปลี่ยนสิทธิ์ของคุณ {$user->name} เป็น {$roleText} เรียบร้อยแล้ว");
     }
 }

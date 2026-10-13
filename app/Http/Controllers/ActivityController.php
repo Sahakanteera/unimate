@@ -102,7 +102,11 @@ class ActivityController extends Controller
     {
         $activity = new Activity($request->safe()->only(['category_id', 'title', 'description', 'location', 'google_maps_url', 'starts_at', 'ends_at', 'capacity']));
         if ($request->hasFile('location_image')) {
-            $activity->location_image_path = $request->file('location_image')->store('activity-locations', 'public');
+            $imagePath = $request->file('location_image')->store('activity-locations', 'public');
+            if ($imagePath === false) {
+                abort(503, 'บันทึกรูปสถานที่ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
+            }
+            $activity->location_image_path = $imagePath;
         }
         // กำหนดเจ้าของและสถานะที่เซิร์ฟเวอร์ ไม่รับค่าที่ผู้ใช้ปลอมส่งมาจากฟอร์ม
         $activity->user()->associate($request->user());
@@ -158,7 +162,11 @@ class ActivityController extends Controller
             $activity->longitude = null;
         }
         if ($request->hasFile('location_image')) {
-            $activity->location_image_path = $request->file('location_image')->store('activity-locations', 'public');
+            $imagePath = $request->file('location_image')->store('activity-locations', 'public');
+            if ($imagePath === false) {
+                abort(503, 'บันทึกรูปสถานที่ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
+            }
+            $activity->location_image_path = $imagePath;
         }
         $activity->save();
         if ($oldImage && $oldImage !== $activity->location_image_path) {

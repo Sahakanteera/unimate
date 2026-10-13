@@ -11,6 +11,7 @@
         ['my-activities.index', 'นัดของฉัน', ['my-activities.*', 'activities.requests']],
     ];
     $adminNav = [
+        ['admin.insights.index', 'ภาพรวมข้อมูล', 'admin.insights.*', 'chart-bar'],
         ['admin.users.index', 'จัดการผู้ใช้งาน', 'admin.users.*', 'users'],
         ['admin.categories.index', 'จัดการหมวดหมู่', 'admin.categories.*', 'squares'],
         ['admin.reports.index', 'ตรวจรายงาน', 'admin.reports.*', 'flag'],
