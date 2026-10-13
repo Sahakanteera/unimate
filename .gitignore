@@ -22,3 +22,6 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+
+# ภาพที่ Codex/impeccable ใช้ตรวจหน้าจอ ไม่ต้องเก็บใน repo
+/.impeccable

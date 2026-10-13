@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none">
+  <title>UniMate</title>
+  <!-- Clean vector version of approved concept 1: public/images/brand/unimate-mark.png. -->
+  <path d="M64 24h128a40 40 0 0 1 40 40v112l-56 56H64a40 40 0 0 1-40-40V64a40 40 0 0 1 40-40Z" fill="#F5C518"/>
+  <path d="M176 176h56l-56 56v-56Z" fill="#D4A709"/>
+  <path d="M82 86v58a46 46 0 0 0 92 0V86" stroke="#131922" stroke-width="44" stroke-linecap="round"/>
+</svg>

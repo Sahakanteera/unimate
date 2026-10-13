@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Activity;
 use App\Models\ActivityParticipant;
+use App\Notifications\ActivityNotification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
@@ -50,6 +52,13 @@ class ParticipationController extends Controller
         $participant->status = 'pending';
         $participant->save();
 
+        // แจ้งผู้จัดว่ามีคำขอใหม่ กดแล้วไปหน้าจัดการคำขอ
+        $activity->user->notify(new ActivityNotification(
+            "{$request->user()->name} ขอเข้าร่วมกิจกรรม '{$activity->title}'",
+            route('activities.requests', $activity, false),
+            'request'
+        ));
+
         return back()->with('success', 'ส่งคำขอเข้าร่วมกิจกรรมเรียบร้อยแล้ว รอผู้จัดอนุมัติ');
     }
 
@@ -61,9 +70,23 @@ class ParticipationController extends Controller
             ->whereIn('status', ['pending', 'approved'])
             ->firstOrFail();
 
+        // ถอนได้เฉพาะก่อนกิจกรรมเริ่ม ใช้เงื่อนไขเดียวกับที่หน้าเว็บซ่อนปุ่ม
+        if (! Carbon::parse($activity->starts_at)->isFuture()) {
+            return back()->with('error', 'กิจกรรมเริ่มแล้ว ไม่สามารถถอนคำขอหรือถอนตัวได้');
+        }
+
         $wasApproved = $participant->isApproved();
         $participant->status = 'cancelled';
         $participant->save();
+
+        // แจ้งผู้จัดเมื่อมีคนถอนตัวหรือถอนคำขอ
+        $activity->user->notify(new ActivityNotification(
+            $wasApproved
+                ? "{$request->user()->name} ถอนตัวจากกิจกรรม '{$activity->title}'"
+                : "{$request->user()->name} ถอนคำขอเข้าร่วมกิจกรรม '{$activity->title}'",
+            route('activities.requests', ['activity' => $activity, 'status' => $wasApproved ? 'approved' : 'pending'], false),
+            'warning'
+        ));
 
         $message = $wasApproved
             ? 'ถอนตัวจากกิจกรรมเรียบร้อยแล้ว'
@@ -114,6 +137,11 @@ class ParticipationController extends Controller
             return back()->with('error', 'คำขอนี้ไม่ได้อยู่ในสถานะรออนุมัติ');
         }
 
+        // กิจกรรมเริ่มแล้วถือว่าปิดรับ เหมือนกับเงื่อนไข join ใน ActivityPolicy
+        if (! Carbon::parse($activity->starts_at)->isFuture()) {
+            return back()->with('error', 'กิจกรรมเริ่มแล้ว ไม่สามารถอนุมัติเพิ่มได้');
+        }
+
         $approved = DB::transaction(function () use ($activity, $participant) {
             // ล็อกแถว activity เพื่อป้องกันการอนุมัติพร้อมกัน
             $lockedActivity = Activity::lockForUpdate()->find($activity->id);
@@ -131,6 +159,13 @@ class ParticipationController extends Controller
         if (! $approved) {
             return back()->with('error', 'กิจกรรมเต็มแล้ว ไม่สามารถอนุมัติเพิ่มได้');
         }
+
+        // ส่งการแจ้งเตือนว่าได้รับอนุมัติ
+        $participant->user->notify(new ActivityNotification(
+            "คำขอเข้าร่วมกิจกรรม '{$activity->title}' ของคุณได้รับการอนุมัติแล้ว!",
+            route('activities.show', $activity, false),
+            'success'
+        ));
 
         return back()->with('success', 'อนุมัติคำขอของ '.$participant->user->name.' เรียบร้อยแล้ว');
     }
@@ -151,6 +186,36 @@ class ParticipationController extends Controller
         $participant->status = 'rejected';
         $participant->save();
 
+        // ส่งการแจ้งเตือนว่าถูกปฏิเสธ
+        $participant->user->notify(new ActivityNotification(
+            "คำขอเข้าร่วมกิจกรรม '{$activity->title}' ของคุณไม่ได้รับการอนุมัติ",
+            route('activities.show', $activity, false),
+            'danger'
+        ));
+
         return back()->with('success', 'ปฏิเสธคำขอของ '.$participant->user->name.' เรียบร้อยแล้ว');
+    }
+
+    public function updateAttendance(Request $request, Activity $activity, ActivityParticipant $participant): RedirectResponse
+    {
+        Gate::authorize('manageRequests', $activity);
+
+        if ($participant->activity_id !== $activity->id) {
+            abort(404);
+        }
+
+        // เพิ่มการตรวจสอบตรงนี้: ห้ามเช็กชื่อคนที่ยังไม่ผ่านการอนุมัติ!
+        if (! $participant->isApproved()) {
+            return back()->with('error', 'ไม่สามารถเช็กชื่อได้ เนื่องจากผู้ใช้นี้ยังไม่ได้รับอนุมัติให้เข้าร่วมกิจกรรม');
+        }
+
+        $request->validate([
+            'attendance' => ['required', 'in:present,absent'],
+        ]);
+
+        $participant->attendance = $request->attendance;
+        $participant->save();
+
+        return back()->with('success', 'บันทึกการเช็กชื่อเรียบร้อยแล้ว');
     }
 }
