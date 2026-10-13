@@ -257,3 +257,48 @@ test('ถอนตัวจาก approved — ที่ว่างกลับ
     expect($activity->isFull())->toBeFalse();
     expect($activity->remainingSlots())->toBe(1);
 });
+
+// ──────────────── กิจกรรมเริ่มแล้ว (กำลังดำเนินการ) ────────────────
+
+test('ถอนคำขอหรือถอนตัวไม่ได้เมื่อกิจกรรมเริ่มแล้ว', function (string $status) {
+    $host = createUser('host@test.com');
+    $user = createUser('joiner@test.com');
+    $activity = createPublishedActivity($host);
+
+    $participant = new ActivityParticipant;
+    $participant->activity_id = $activity->id;
+    $participant->user_id = $user->id;
+    $participant->status = $status;
+    $participant->save();
+
+    // กิจกรรมกำลังดำเนินการ: เริ่มไปแล้ว 1 ชั่วโมง ยังไม่จบ
+    $activity->starts_at = now()->subHour();
+    $activity->ends_at = now()->addHour();
+    $activity->save();
+
+    $response = $this->actingAs($user)->patch(route('activities.cancel-request', $activity));
+    $response->assertSessionHas('error');
+
+    expect($participant->refresh()->status)->toBe($status);
+})->with(['pending', 'approved']);
+
+test('Host อนุมัติคำขอไม่ได้เมื่อกิจกรรมเริ่มแล้ว', function () {
+    $host = createUser('host@test.com');
+    $user = createUser('joiner@test.com');
+    $activity = createPublishedActivity($host);
+
+    $participant = new ActivityParticipant;
+    $participant->activity_id = $activity->id;
+    $participant->user_id = $user->id;
+    $participant->status = 'pending';
+    $participant->save();
+
+    $activity->starts_at = now()->subHour();
+    $activity->ends_at = now()->addHour();
+    $activity->save();
+
+    $response = $this->actingAs($host)->patch(route('activities.requests.approve', [$activity, $participant]));
+    $response->assertSessionHas('error');
+
+    expect($participant->refresh()->status)->toBe('pending');
+});

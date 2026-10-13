@@ -7,6 +7,7 @@ use App\Models\ActivityParticipant;
 use App\Notifications\ActivityNotification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
@@ -62,6 +63,11 @@ class ParticipationController extends Controller
             ->whereIn('status', ['pending', 'approved'])
             ->firstOrFail();
 
+        // ถอนได้เฉพาะก่อนกิจกรรมเริ่ม ใช้เงื่อนไขเดียวกับที่หน้าเว็บซ่อนปุ่ม
+        if (! Carbon::parse($activity->starts_at)->isFuture()) {
+            return back()->with('error', 'กิจกรรมเริ่มแล้ว ไม่สามารถถอนคำขอหรือถอนตัวได้');
+        }
+
         $wasApproved = $participant->isApproved();
         $participant->status = 'cancelled';
         $participant->save();
@@ -115,6 +121,11 @@ class ParticipationController extends Controller
             return back()->with('error', 'คำขอนี้ไม่ได้อยู่ในสถานะรออนุมัติ');
         }
 
+        // กิจกรรมเริ่มแล้วถือว่าปิดรับ เหมือนกับเงื่อนไข join ใน ActivityPolicy
+        if (! Carbon::parse($activity->starts_at)->isFuture()) {
+            return back()->with('error', 'กิจกรรมเริ่มแล้ว ไม่สามารถอนุมัติเพิ่มได้');
+        }
+
         $approved = DB::transaction(function () use ($activity, $participant) {
             // ล็อกแถว activity เพื่อป้องกันการอนุมัติพร้อมกัน
             $lockedActivity = Activity::lockForUpdate()->find($activity->id);
@@ -161,7 +172,7 @@ class ParticipationController extends Controller
         return back()->with('success', 'ปฏิเสธคำขอของ '.$participant->user->name.' เรียบร้อยแล้ว');
     }
 
-   public function updateAttendance(Request $request, Activity $activity, ActivityParticipant $participant): RedirectResponse
+    public function updateAttendance(Request $request, Activity $activity, ActivityParticipant $participant): RedirectResponse
     {
         Gate::authorize('manageRequests', $activity);
 
