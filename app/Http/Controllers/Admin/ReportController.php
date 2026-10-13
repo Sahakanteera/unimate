@@ -8,6 +8,7 @@ use App\Models\ModerationLog;
 use App\Models\Report;
 use App\Models\Review;
 use App\Models\User;
+use App\Models\UserReview;
 use App\Notifications\ActivityNotification;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -43,7 +44,7 @@ class ReportController extends Controller
     }
 
     /**
-     * action = hide (ซ่อนกิจกรรม / ระงับผู้ใช้ / ลบรีวิว ตามประเภทที่ถูกรายงาน)
+     * action = hide (ซ่อนกิจกรรม / ระงับผู้ใช้ / ลบรีวิวกิจกรรมหรือรีวิวผู้ใช้ ตามประเภทที่ถูกรายงาน)
      * หรือ dismiss (ไม่ดำเนินการ) ต้องมีเหตุผลเสมอ
      */
     public function resolve(Request $request, Report $report): RedirectResponse
@@ -82,7 +83,7 @@ class ReportController extends Controller
                 return;
             }
 
-            if ($target instanceof Review) {
+            if ($target instanceof Review || $target instanceof UserReview) {
                 // บันทึกประวัติ (พร้อม report_id) และแจ้งผู้เขียนรีวิวอยู่ใน deleteByAdmin
                 $target->deleteByAdmin($admin, $note, $report);
             } elseif ($target instanceof Activity) {

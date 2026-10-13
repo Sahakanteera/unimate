@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\InsightsController;
 use App\Http\Controllers\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Admin\UserReviewController as AdminUserReviewController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\MyActivityController;
 use App\Http\Controllers\NotificationController;
@@ -14,6 +15,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\UserProfileController;
+use App\Http\Controllers\UserReviewController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -72,7 +74,17 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::delete('/reviews/{review}', [ReviewController::class, 'destroy'])->name('activities.reviews.destroy')->scopeBindings();
         Route::post('/reviews/{review}/report', [ReportController::class, 'storeReview'])->name('activities.reviews.report')->scopeBindings();
         Route::post('/reports', [ReportController::class, 'store'])->name('activities.reports.store');
+
+        // รีวิวเพื่อนร่วมกิจกรรม (รีวิวคน แยกจากรีวิวกิจกรรม)
+        Route::get('/people', [UserReviewController::class, 'index'])->name('activities.people');
+        Route::post('/people/{user}/review', [UserReviewController::class, 'store'])->name('activities.people.review');
+        // scopeBindings: รีวิวต้องเป็นของกิจกรรมใน URL ไม่เช่นนั้นได้ 404
+        Route::patch('/user-reviews/{userReview}', [UserReviewController::class, 'update'])->name('activities.user-reviews.update')->scopeBindings();
+        Route::delete('/user-reviews/{userReview}', [UserReviewController::class, 'destroy'])->name('activities.user-reviews.destroy')->scopeBindings();
     });
+
+    // รายงานรีวิวผู้ใช้ (ปุ่มอยู่ในหน้าโปรไฟล์)
+    Route::post('/user-reviews/{userReview}/report', [ReportController::class, 'storeUserReview'])->name('user-reviews.report');
 });
 
 Route::middleware(['auth', 'active', 'admin'])->prefix('admin')->name('admin.')->group(function () {
@@ -89,4 +101,5 @@ Route::middleware(['auth', 'active', 'admin'])->prefix('admin')->name('admin.')-
     Route::patch('/reports/{report}/resolve', [AdminReportController::class, 'resolve'])->name('reports.resolve');
     Route::patch('/activities/{activity}/unhide', [AdminReportController::class, 'unhide'])->name('activities.unhide');
     Route::delete('/reviews/{review}', [AdminReviewController::class, 'destroy'])->name('reviews.destroy');
+    Route::delete('/user-reviews/{userReview}', [AdminUserReviewController::class, 'destroy'])->name('user-reviews.destroy');
 });

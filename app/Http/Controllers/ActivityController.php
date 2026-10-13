@@ -141,7 +141,19 @@ class ActivityController extends Controller
         $myReview = $mine->first();
         $reviewBlockReason = $activity->reviewBlockReason($request->user());
 
-        return view('activities.show', compact('activity', 'myParticipation', 'approvedMembers', 'pendingCount', 'reviews', 'myReview', 'reviewBlockReason'));
+        // รีวิวเพื่อนร่วมกิจกรรม: null = ไม่แสดงปุ่ม (ไม่ได้ไปจริง หรือกิจกรรมยังรีวิวไม่ได้)
+        // ไม่งั้นเป็นจำนวนคนที่ยังไม่ได้รีวิว ใช้รายชื่อสมาชิกที่โหลดแล้วแทนการ query ซ้ำ
+        $peopleToReview = null;
+        $me = $request->user();
+        $presentIds = $approvedMembers->where('attendance', 'present')->pluck('user_id');
+        $isAttendee = $me->id === $activity->user_id || $presentIds->contains($me->id);
+        if ($isAttendee && $activity->userReviewClosedReason() === null) {
+            $others = $presentIds->push($activity->user_id)->reject(fn ($id) => $id === $me->id);
+            $reviewed = $activity->userReviews()->where('reviewer_id', $me->id)->whereIn('reviewee_id', $others)->count();
+            $peopleToReview = max(0, $others->count() - $reviewed);
+        }
+
+        return view('activities.show', compact('activity', 'myParticipation', 'approvedMembers', 'pendingCount', 'reviews', 'myReview', 'reviewBlockReason', 'peopleToReview'));
     }
 
     public function edit(Activity $activity): View

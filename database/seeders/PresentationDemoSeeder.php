@@ -9,6 +9,7 @@ use App\Models\ModerationLog;
 use App\Models\Report;
 use App\Models\Review;
 use App\Models\User;
+use App\Models\UserReview;
 use App\Notifications\ActivityNotification;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Seeder;
@@ -181,6 +182,47 @@ class PresentationDemoSeeder extends Seeder
         $this->activity($mind, 'จิตอาสา', 'เก็บขยะรอบบึงสีฐาน',
             'มีถุงมือและถุงขยะให้ ได้ชั่วโมงจิตอาสา', 'บึงสีฐาน มข.', 9, '08:00', 180, 20, maps: 'บึงสีฐาน มหาวิทยาลัยขอนแก่น');
 
+        // ─────────── รีวิวผู้ใช้ (รีวิวคน: ผู้จัด↔ผู้เข้าร่วม และผู้เข้าร่วม↔ผู้เข้าร่วม) ───────────
+
+        // บาสวันพุธ: ผู้เข้าร่วมรีวิวนรินทร์แล้ว แต่นรินทร์ (ผู้จัด) ยังไม่รีวิวใคร → งานค้าง 4 คน ให้กดสด
+        $this->userReview($basketball, $phum, $narin, 5, 'นัดตรงเวลา จัดทีมยุติธรรม');
+        $this->userReview($basketball, $ton, $narin, 4);
+        $this->userReview($basketball, $fah, $narin, 5, 'ผู้จัดใจดี ดูแลทุกคน');
+        $this->userReview($basketball, $phum, $ton, 5, 'ส่งบอลดี เล่นเป็นทีม');
+        $this->userReview($basketball, $june, $phum, 4);
+
+        $this->userReview($python, $narin, $praew, 5, 'ตั้งใจเรียน ถามเก่ง');
+        $this->userReview($python, $narin, $june, 4, 'มาตรงเวลา ช่วยเพื่อนดีบักด้วย');
+        $this->userReview($python, $praew, $narin, 5, 'สอนใจเย็นมากค่ะ');
+        $this->userReview($python, $june, $narin, 5);
+        $this->userReview($python, $praew, $june, 5, 'พี่จูนช่วยอธิบายเพิ่มให้ เข้าใจขึ้นเยอะ');
+
+        // เดินป่า: คนอื่นรีวิวนรินทร์แล้ว แต่นรินทร์ (ผู้เข้าร่วม) ยังไม่รีวิวใคร → งานค้าง 4 คน ให้กดสด
+        $this->userReview($hike, $mind, $phum, 5, 'ช่วยดูแลน้องใหม่ตลอดทาง');
+        $this->userReview($hike, $mind, $ton, 5);
+        $this->userReview($hike, $mind, $praew, 4, 'เดินช้าหน่อยแต่ไม่บ่นเลย สู้มาก');
+        $this->userReview($hike, $mind, $narin, 5, 'มาตรงเวลา ช่วยถือของให้เพื่อน');
+        $this->userReview($hike, $phum, $mind, 5, 'ผู้จัดเตรียมตัวดีมาก มีแผนสำรองด้วย');
+        $this->userReview($hike, $ton, $mind, 5);
+        $this->userReview($hike, $praew, $mind, 5, 'พี่มายด์ใจดีมากค่ะ');
+        $this->userReview($hike, $phum, $narin, 5, 'คุยสนุก เดินด้วยกันทั้งวัน');
+        $this->userReview($hike, $ton, $praew, 4);
+
+        // แจมกีตาร์: นรินทร์รีวิวครบแล้ว (แก้ไข/ลบได้) และมีรีวิวคำหยาบของโอ๊ตถึงภูมิ
+        $this->userReview($jam, $narin, $fah, 4, 'เลือกเพลงดี บรรยากาศชิล');
+        $this->userReview($jam, $narin, $phum, 5, 'เล่นกีตาร์เพราะมาก');
+        $this->userReview($jam, $narin, $june, 5);
+        $this->userReview($jam, $narin, $oat, 3, 'มาสาย แต่ร้องเพลงสนุก');
+        $this->userReview($jam, $fah, $narin, 5, 'ร้องเพลงเพราะ ชวนคนอื่นร้องด้วย');
+        $this->userReview($jam, $fah, $phum, 5);
+        $this->userReview($jam, $fah, $oat, 2, 'มาสายครึ่งชั่วโมง ไม่บอกล่วงหน้า');
+        $this->userReview($jam, $phum, $fah, 5, 'จัดสนุก ไว้มาอีกแน่นอน');
+        $this->userReview($jam, $june, $fah, 4);
+        $rudeUserReview = $this->userReview($jam, $oat, $phum, 1, 'เล่นกีตาร์ห่วยแตก หนวกหูชะมัด อย่ามาให้เห็นหน้าอีก');
+
+        $this->userReview($stats, $praew, $june, 5, 'อธิบายเป็นขั้นตอน เข้าใจง่าย');
+        $this->userReview($stats, $june, $praew, 5, 'ทำโจทย์ครบทุกข้อ ตั้งใจมาก');
+
         // ─────────── รายงาน (รอตรวจ / ดำเนินการแล้ว / ยกรายงาน) ───────────
 
         $spam = $this->activity($oat, 'อื่น ๆ', 'รับทำการบ้าน รายงาน ทุกวิชา ราคาถูก',
@@ -189,6 +231,7 @@ class PresentationDemoSeeder extends Seeder
         $this->report($praew, 'activity', $spam->id, 'เป็นโพสต์โฆษณา ไม่ใช่กิจกรรมค่ะ', hoursAgo: 2);
         $this->report($praew, 'user', $oat->id, 'ไม่มาตามนัด แล้วยังทักแชทมาพูดจาไม่สุภาพ', hoursAgo: 8);
         $this->report($phum, 'review', $rudeReview->id, 'รีวิวใช้คำไม่สุภาพและดูถูกผู้จัด', hoursAgo: 1);
+        $this->report($phum, 'user_review', $rudeUserReview->id, 'รีวิวถึงผมใช้คำหยาบและดูถูกกัน', hoursAgo: 2);
 
         // ซ่อนไปแล้ว: เดโมเลิกซ่อน
         $sheet = $this->activity($oat, 'อื่น ๆ', 'ขายชีทสรุปข้อสอบเก่า ทักไลน์',
@@ -218,6 +261,8 @@ class PresentationDemoSeeder extends Seeder
         $this->notify($narin, "คำขอเข้าร่วมกิจกรรม '{$run->title}' ของคุณได้รับการอนุมัติแล้ว!", route('activities.show', $run, false), 'success', 70, read: true);
         $this->notify($narin, "คำขอเข้าร่วมกิจกรรม '{$hike->title}' ของคุณได้รับการอนุมัติแล้ว!", route('activities.show', $hike, false), 'success', 150, read: true);
         $this->notify($narin, "มีรีวิวใหม่ 5 ดาว ในกิจกรรม '{$basketball->title}'", route('activities.show', $basketball, false).'#reviews', 'review', 360, read: true);
+        $this->notify($narin, "ภูมิ ทองดี ให้คะแนนคุณ 5 ดาว จากกิจกรรม '{$hike->title}'", route('users.show', ['user' => $narin, 'tab' => 'participant'], false).'#received-reviews', 'review', 30, read: true);
+        $this->notify($phum, "โอ๊ต ร. ให้คะแนนคุณ 1 ดาว จากกิจกรรม '{$jam->title}'", route('users.show', ['user' => $phum, 'tab' => 'participant'], false).'#received-reviews', 'review', 150);
 
         $this->notify($mind, "ต้น ศักดิ์ดา ขอเข้าร่วมกิจกรรม '{$run->title}'", route('activities.requests', $run, false), 'request', 6);
         $this->notify($mind, "Narin K. (นรินทร์) ขอเข้าร่วมกิจกรรม '{$bike->title}'", route('activities.requests', $bike, false), 'request', 20);
@@ -304,6 +349,22 @@ class PresentationDemoSeeder extends Seeder
         $review->activity()->associate($activity);
         $review->user()->associate($user);
         $at = CarbonImmutable::parse($activity->ends_at)->addHours(3)->min($this->now);
+        $review->created_at = $at;
+        $review->updated_at = $at;
+        $review->save();
+
+        return $review;
+    }
+
+    /** รีวิวคน บทบาทของผู้ถูกรีวิวดูจากว่าเป็นผู้จัดกิจกรรมหรือไม่ (แบบเดียวกับ UserReviewController) */
+    private function userReview(Activity $activity, User $reviewer, User $reviewee, int $rating, ?string $comment = null): UserReview
+    {
+        $review = new UserReview(['rating' => $rating, 'comment' => $comment]);
+        $review->activity()->associate($activity);
+        $review->reviewer()->associate($reviewer);
+        $review->reviewee()->associate($reviewee);
+        $review->reviewee_role = $reviewee->id === $activity->user_id ? 'host' : 'participant';
+        $at = CarbonImmutable::parse($activity->ends_at)->addHours(4)->min($this->now);
         $review->created_at = $at;
         $review->updated_at = $at;
         $review->save();

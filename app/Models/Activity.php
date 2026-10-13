@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 
 class Activity extends Model
 {
@@ -77,6 +78,87 @@ class Activity extends Model
         }
         if ($this->reviews()->where('user_id', $user->id)->exists()) {
             return 'คุณรีวิวกิจกรรมนี้ไปแล้ว';
+        }
+
+        return null;
+    }
+
+    /** @return HasMany<UserReview, $this> */
+    public function userReviews(): HasMany
+    {
+        return $this->hasMany(UserReview::class);
+    }
+
+    /**
+     * กลุ่มคนที่ไปจริง = ผู้จัด + ผู้เข้าร่วมที่ได้รับอนุมัติและถูกเช็กว่ามา (ผู้จัดอยู่ลำดับแรก)
+     *
+     * @return Collection<int, User>
+     */
+    public function attendees(): Collection
+    {
+        $participantIds = $this->participants()
+            ->where('status', 'approved')
+            ->where('attendance', 'present')
+            ->pluck('user_id');
+
+        return User::whereIn('id', $participantIds->push($this->user_id))
+            ->get()
+            ->sortBy(fn (User $user) => [$user->id === $this->user_id ? 0 : 1, $user->name])
+            ->values();
+    }
+
+    /** อยู่ในกลุ่มคนที่ไปจริงหรือไม่ (ผู้จัดนับเสมอ) */
+    public function isAttendee(User $user): bool
+    {
+        return $user->id === $this->user_id
+            || $this->participants()
+                ->where('user_id', $user->id)
+                ->where('status', 'approved')
+                ->where('attendance', 'present')
+                ->exists();
+    }
+
+    /** เหตุผลที่กิจกรรมนี้ยังรีวิวคนไม่ได้ (ไม่ขึ้นกับผู้ใช้) หรือ null ถ้าเปิดให้รีวิวแล้ว */
+    public function userReviewClosedReason(): ?string
+    {
+        if ($this->status === 'cancelled') {
+            return 'กิจกรรมนี้ถูกยกเลิก จึงรีวิวไม่ได้';
+        }
+        if ($this->isHidden()) {
+            return 'กิจกรรมนี้ถูกซ่อนโดยผู้ดูแลระบบ จึงรีวิวไม่ได้';
+        }
+        if (! $this->isEnded()) {
+            return 'รีวิวได้หลังกิจกรรมจบแล้วเท่านั้น';
+        }
+
+        return null;
+    }
+
+    /**
+     * คืนเหตุผลที่ $reviewer รีวิว $reviewee ในกิจกรรมนี้ไม่ได้ หรือ null ถ้ารีวิวได้
+     * ใช้ร่วมกันทั้ง Controller และหน้าเว็บ แบบเดียวกับ reviewBlockReason
+     */
+    public function userReviewBlockReason(User $reviewer, User $reviewee): ?string
+    {
+        if ($reviewer->id === $reviewee->id) {
+            return 'รีวิวตัวเองไม่ได้';
+        }
+        $closed = $this->userReviewClosedReason();
+        if ($closed !== null) {
+            return $closed;
+        }
+        if (! $this->isAttendee($reviewer)) {
+            return 'เฉพาะผู้จัดและผู้ที่ได้รับการเช็กชื่อว่ามาเข้าร่วมจริงเท่านั้นที่รีวิวได้';
+        }
+        if (! $this->isAttendee($reviewee)) {
+            return 'ผู้ใช้นี้ไม่ได้มาร่วมกิจกรรมนี้ จึงรีวิวไม่ได้';
+        }
+        $exists = $this->userReviews()
+            ->where('reviewer_id', $reviewer->id)
+            ->where('reviewee_id', $reviewee->id)
+            ->exists();
+        if ($exists) {
+            return 'คุณรีวิวผู้ใช้นี้ในกิจกรรมนี้ไปแล้ว';
         }
 
         return null;

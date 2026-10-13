@@ -15,6 +15,7 @@ class ModerationLog extends Model
         'suspend_user' => 'ระงับบัญชีผู้ใช้',
         'dismiss' => 'ยกรายงาน (ไม่ดำเนินการ)',
         'delete_review' => 'ลบรีวิว',
+        'delete_user_review' => 'ลบรีวิวผู้ใช้',
     ];
 
     /** @return BelongsTo<User, $this> */
@@ -37,6 +38,13 @@ class ModerationLog extends Model
             return $review === null
                 ? 'รีวิว #'.$this->target_id.' (ลบแล้ว)'
                 : 'รีวิวของ '.$review->user->name;
+        }
+        if ($this->target_type === 'user_review') {
+            $userReview = UserReview::with(['reviewer', 'reviewee'])->find($this->target_id);
+
+            return $userReview === null
+                ? 'รีวิวผู้ใช้ #'.$this->target_id.' (ลบแล้ว)'
+                : 'รีวิวจาก '.$userReview->reviewer->name.' ถึง '.$userReview->reviewee->name;
         }
         if ($this->target_type === 'activity') {
             $name = Activity::find($this->target_id)?->title;

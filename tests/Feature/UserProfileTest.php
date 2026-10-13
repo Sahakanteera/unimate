@@ -5,6 +5,7 @@ use App\Models\ActivityParticipant;
 use App\Models\Category;
 use App\Models\Review;
 use App\Models\User;
+use App\Models\UserReview;
 
 // ──────────────── Helpers (ชื่อขึ้นต้น pf เพื่อไม่ชนกับ helper ในไฟล์ทดสอบอื่น) ────────────────
 
@@ -60,6 +61,19 @@ function pfReview(Activity $activity, User $user, int $rating, ?string $comment 
     return $review;
 }
 
+/** @param 'host'|'participant' $role */
+function pfUserReview(Activity $activity, User $reviewer, User $reviewee, string $role, int $rating, ?string $comment = null): UserReview
+{
+    $review = new UserReview(['rating' => $rating, 'comment' => $comment]);
+    $review->activity()->associate($activity);
+    $review->reviewer()->associate($reviewer);
+    $review->reviewee()->associate($reviewee);
+    $review->reviewee_role = $role;
+    $review->save();
+
+    return $review;
+}
+
 // ──────────────── โปรไฟล์สาธารณะ ────────────────
 
 test('guest ถูกพาไปหน้าเข้าสู่ระบบ', function () {
@@ -78,7 +92,8 @@ test('ดูโปรไฟล์คนอื่นได้ โดยไม่�
         ->assertSee($host->name)
         ->assertSee('ชอบเล่นกีฬา')
         ->assertSee('ปั่นจักรยานรอบมอ')
-        ->assertSee('คะแนนจากการจัดกิจกรรม')
+        ->assertSee('คะแนนในฐานะผู้จัด')
+        ->assertSee('คะแนนในฐานะผู้เข้าร่วม')
         ->assertDontSee('pf-host@test.com')
         ->assertDontSee($host->student_id)
         ->assertViewHas('isSelf', false); // เมนูบัญชีใน nav มีลิงก์ "แก้ไขโปรไฟล์" ทุกหน้า จึงตรวจจากค่าที่ส่งให้ view
@@ -91,7 +106,7 @@ test('โปรไฟล์ตัวเองมีปุ่มแก้ไข�
         ->assertOk()->assertViewHas('isSelf', true)->assertSee('แก้ไขโปรไฟล์');
 });
 
-test('คะแนนผู้จัดเฉลี่ยจากกิจกรรมที่จัด และไม่นับกิจกรรมที่ถูกซ่อน', function () {
+test('คะแนนผู้จัดเฉลี่ยจากรีวิวคนในฐานะผู้จัด และไม่นับกิจกรรมที่ถูกซ่อน', function () {
     $host = pfUser('pf-host2@test.com');
     $a = pfUser('pf-a@test.com');
     $b = pfUser('pf-b@test.com');
@@ -102,19 +117,25 @@ test('คะแนนผู้จัดเฉลี่ยจากกิจก�
     $hidden->hidden_reason = 'ทดสอบ';
     $hidden->save();
 
-    pfReview($first, $a, 5, 'จัดดีมาก');
-    pfReview($first, $b, 4);
-    pfReview($second, $a, 3);
-    pfReview($hidden, $b, 1, 'รีวิวในกิจกรรมที่ซ่อน');
+    pfUserReview($first, $a, $host, 'host', 5, 'จัดดีมาก');
+    pfUserReview($first, $b, $host, 'host', 4);
+    pfUserReview($second, $a, $host, 'host', 3);
+    pfUserReview($hidden, $b, $host, 'host', 1, 'รีวิวในกิจกรรมที่ซ่อน');
+    // รีวิวกิจกรรม (ตาราง reviews) ไม่ถูกนำมาคิดเป็นคะแนนของคนแล้ว
+    pfReview($first, $a, 1, 'รีวิวกิจกรรมไม่ใช่รีวิวคน');
 
     // (5 + 4 + 3) / 3 = 4.0 จาก 3 รีวิว
-    $this->actingAs($a)->get(route('users.show', $host))
+    $response = $this->actingAs($a)->get(route('users.show', $host))
         ->assertOk()
         ->assertSee('4.0')
         ->assertSee('จาก 3 รีวิว')
         ->assertSee('จัดดีมาก')
         ->assertDontSee('รีวิวในกิจกรรมที่ซ่อน')
+        ->assertDontSee('รีวิวกิจกรรมไม่ใช่รีวิวคน')
         ->assertDontSee('กิจกรรมที่ถูกซ่อน');
+    expect($response->viewData('stats')['host_rating'])->toBe(['rating' => 4.0, 'total' => 3]);
+    expect($response->viewData('stats')['participant_rating'])->toBeNull();
+    expect($response->viewData('tab'))->toBe('host');
 
     // เจ้าของยังเห็นกิจกรรมที่ถูกซ่อนในประวัติของตัวเอง แต่คะแนนยังไม่นับ
     $this->actingAs($host)->get(route('users.show', $host))
@@ -132,6 +153,9 @@ test('ประวัติเข้าร่วมนับเฉพาะท�
     $response = $this->actingAs($host)->get(route('users.show', $member))->assertOk();
 
     expect($response->viewData('stats')['attended'])->toBe(1);
+    // มาตามนัด X/Y: Y นับเฉพาะที่อนุมัติ จบแล้ว และเช็กชื่อแล้ว (มา 1 ขาด 1)
+    expect($response->viewData('stats')['attendance'])->toBe(['present' => 1, 'total' => 2]);
+    $response->assertSee('ครั้ง');
     expect($response->viewData('attended')->pluck('title')->all())->toBe(['มาจริงและจบแล้ว']);
     $response->assertSee('มาจริงและจบแล้ว')->assertDontSee('ขาดนัด')->assertDontSee('ยังไม่ถึงวัน');
 });

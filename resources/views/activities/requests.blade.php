@@ -72,6 +72,19 @@
                                     <span class="chip h-6 px-2.5 text-xs">ถอนตัวแล้ว</span>
                                 @endif
                             </div>
+                            {{-- ประวัติของผู้ขอ: คะแนนในฐานะผู้เข้าร่วม (จากรีวิวคน) และมาตามนัด ช่วยตัดสินใจอนุมัติ --}}
+                            @php
+                                $rating = $ratings->get($p->user_id);
+                                $record = $attendance->get($p->user_id);
+                            @endphp
+                            <p class="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-muted">
+                                @if($rating)
+                                    <span class="flex items-center gap-1" title="คะแนนในฐานะผู้เข้าร่วม"><x-ui.icon name="star" solid class="h-3.5 w-3.5 text-sun" /><span class="font-medium tabular-nums text-ink">{{ number_format($rating['rating'], 1) }}</span> ({{ $rating['total'] }} รีวิว)</span>
+                                @else
+                                    <span>ยังไม่มีรีวิวผู้เข้าร่วม</span>
+                                @endif
+                                <span class="tabular-nums">มาตามนัด {{ $record ? $record['present'].'/'.$record['total'] : '0/0' }} ครั้ง</span>
+                            </p>
                             @if($p->message)
                                 <p class="break-anywhere mt-2 inline-block max-w-full rounded-2xl rounded-tl-md bg-canvas px-3.5 py-2 text-sm text-ink-soft"><span class="sr-only">ข้อความ: </span>{{ $p->message }}</p>
                             @endif

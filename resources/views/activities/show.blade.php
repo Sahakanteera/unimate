@@ -205,6 +205,18 @@
                     </div>
                 @endif
             @endcan
+
+            {{-- รีวิวเพื่อนร่วมกิจกรรม (ผู้จัดและผู้ที่ถูกเช็กว่ามา หลังกิจกรรมจบ) Controller ตรวจสิทธิ์ซ้ำ --}}
+            @if($peopleToReview !== null)
+                <div class="mt-3">
+                    <a href="{{ route('activities.people', $activity) }}" class="btn {{ $peopleToReview > 0 ? 'btn-primary' : 'btn-secondary' }} w-full">
+                        <x-ui.icon name="users" class="h-4 w-4" /> รีวิวเพื่อนร่วมกิจกรรม
+                        @if($peopleToReview > 0)
+                            <span class="badge-count bg-sun text-night" aria-label="ยังไม่ได้รีวิว {{ $peopleToReview }} คน">{{ $peopleToReview }}</span>
+                        @endif
+                    </a>
+                </div>
+            @endif
         </div>
 
         {{-- ผู้ประกาศ --}}

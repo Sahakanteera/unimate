@@ -11,10 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-    Schema::table('activity_participants', function (Blueprint $table) {
-        // เพิ่มคอลัมน์ attendance เก็บค่า present (มา) หรือ absent (ขาด) โดยให้ค่าเริ่มต้นว่างไว้ (ยังไม่เช็ก)
-        $table->enum('attendance', ['present', 'absent'])->nullable()->after('status');
-    });
+        Schema::table('activity_participants', function (Blueprint $table) {
+            // เพิ่มคอลัมน์ attendance เก็บค่า present (มา) หรือ absent (ขาด) โดยให้ค่าเริ่มต้นว่างไว้ (ยังไม่เช็ก)
+            $table->enum('attendance', ['present', 'absent'])->nullable()->after('status');
+        });
     }
 
     /**

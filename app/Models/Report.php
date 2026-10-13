@@ -15,6 +15,7 @@ class Report extends Model
         'activity' => 'กิจกรรม',
         'user' => 'ผู้ใช้',
         'review' => 'รีวิว',
+        'user_review' => 'รีวิวผู้ใช้',
     ];
 
     protected function casts(): array
@@ -34,12 +35,13 @@ class Report extends Model
         return $this->belongsTo(User::class, 'handled_by');
     }
 
-    /** คืนกิจกรรม ผู้ใช้ หรือรีวิวที่ถูกรายงาน (null ถ้าถูกลบไปแล้ว) */
-    public function target(): Activity|User|Review|null
+    /** คืนกิจกรรม ผู้ใช้ รีวิวกิจกรรม หรือรีวิวผู้ใช้ที่ถูกรายงาน (null ถ้าถูกลบไปแล้ว) */
+    public function target(): Activity|User|Review|UserReview|null
     {
         return match ($this->target_type) {
             'activity' => Activity::find($this->target_id),
             'review' => Review::with(['user', 'activity'])->find($this->target_id),
+            'user_review' => UserReview::with(['reviewer', 'reviewee', 'activity'])->find($this->target_id),
             default => User::find($this->target_id),
         };
     }

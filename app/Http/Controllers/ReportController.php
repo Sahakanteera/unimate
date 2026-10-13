@@ -6,6 +6,7 @@ use App\Models\Activity;
 use App\Models\Report;
 use App\Models\Review;
 use App\Models\User;
+use App\Models\UserReview;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -77,6 +78,30 @@ class ReportController extends Controller
         }
 
         return $this->createReport($me, 'review', $review->id, $validated['review_reason']);
+    }
+
+    /**
+     * รายงานรีวิวผู้ใช้ที่ไม่เหมาะสม (ปุ่มอยู่ในหน้าโปรไฟล์ ส่วนรีวิวที่ได้รับ)
+     * ใช้ช่อง user_review_reason แยกจากฟอร์มอื่น เพื่อให้ error เปิดฟอร์มถูกอัน
+     */
+    public function storeUserReview(Request $request, UserReview $userReview): RedirectResponse
+    {
+        $this->abortIfHiddenFromViewer($request, $userReview->activity);
+
+        $validated = $request->validate([
+            'user_review_reason' => ['required', 'string', 'min:5', 'max:1000'],
+        ], [
+            'user_review_reason.required' => 'กรุณาระบุเหตุผลในการรายงาน',
+            'user_review_reason.min' => 'เหตุผลต้องมีอย่างน้อย 5 ตัวอักษร',
+            'user_review_reason.max' => 'เหตุผลต้องไม่เกิน 1000 ตัวอักษร',
+        ]);
+
+        $me = $request->user();
+        if ($userReview->reviewer_id === $me->id) {
+            return back()->with('error', 'ไม่สามารถรายงานรีวิวของตัวเองได้');
+        }
+
+        return $this->createReport($me, 'user_review', $userReview->id, $validated['user_review_reason']);
     }
 
     /** กิจกรรมที่ถูกซ่อน คนอื่นมองไม่เห็นในหน้าเว็บ (404) จึงต้องรายงานผ่าน URL ตรงไม่ได้ด้วย */

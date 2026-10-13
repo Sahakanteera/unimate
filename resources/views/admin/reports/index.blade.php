@@ -26,9 +26,9 @@
         @forelse($reports as $report)
             @php
                 $target = $report->target();
-                $isReview = $report->target_type === 'review';
-                $iconTint = ['activity' => 'bg-tint-butter', 'review' => 'bg-tint-mint'][$report->target_type] ?? 'bg-tint-lilac';
-                $iconName = ['activity' => 'calendar', 'review' => 'star'][$report->target_type] ?? 'user';
+                $isReview = in_array($report->target_type, ['review', 'user_review'], true);
+                $iconTint = ['activity' => 'bg-tint-butter', 'review' => 'bg-tint-mint', 'user_review' => 'bg-tint-peach'][$report->target_type] ?? 'bg-tint-lilac';
+                $iconName = ['activity' => 'calendar', 'review' => 'star', 'user_review' => 'star'][$report->target_type] ?? 'user';
             @endphp
             <article class="card p-5 sm:p-6">
                 <div class="flex flex-wrap items-start justify-between gap-3">
@@ -43,6 +43,10 @@
                                 @elseif($target instanceof \App\Models\Review)
                                     ของ <x-ui.user-link :user="$target->user" class="link">{{ $target->user->name }}</x-ui.user-link>
                                     <span class="text-sm font-normal text-ink-muted">ในกิจกรรม</span> <a href="{{ route('activities.show', $target->activity) }}#reviews" class="link">{{ $target->activity->title }}</a>
+                                @elseif($target instanceof \App\Models\UserReview)
+                                    จาก <x-ui.user-link :user="$target->reviewer" class="link">{{ $target->reviewer->name }}</x-ui.user-link>
+                                    <span class="text-sm font-normal text-ink-muted">ถึง</span> <x-ui.user-link :user="$target->reviewee" class="link">{{ $target->reviewee->name }}</x-ui.user-link>
+                                    <span class="text-sm font-normal text-ink-muted">({{ $target->roleLabel() }}) ในกิจกรรม</span> <a href="{{ route('activities.people', $target->activity) }}" class="link">{{ $target->activity->title }}</a>
                                 @elseif($target instanceof \App\Models\Activity)
                                     <a href="{{ route('activities.show', $target) }}" class="link">{{ $target->title }}</a>
                                     @if($target->isHidden())<span class="chip chip-dark ml-1 h-6 px-2.5 text-xs">ซ่อนอยู่</span>@endif
@@ -55,7 +59,7 @@
                     </div>
                     <span class="chip {{ $statusStyles[$report->status] ?? '' }}">{{ $tabs[$report->status] ?? $report->status }}</span>
                 </div>
-                @if($target instanceof \App\Models\Review)
+                @if($target instanceof \App\Models\Review || $target instanceof \App\Models\UserReview)
                     {{-- เนื้อหารีวิวที่ถูกรายงาน ให้ Admin ตัดสินใจได้โดยไม่ต้องเปิดหน้ากิจกรรม --}}
                     <div class="mt-4 rounded-tile border border-line p-4">
                         <p class="flex" role="img" aria-label="{{ $target->rating }} จาก 5 ดาว">@for($i = 1; $i <= 5; $i++)<x-ui.icon name="star" solid class="h-4 w-4 {{ $i <= $target->rating ? 'text-sun' : 'text-line-strong' }}" />@endfor</p>
@@ -73,8 +77,8 @@
                             {{-- เนื้อหาที่ถูกลบไปแล้ว (เช่น Admin ลบรีวิวจากหน้ากิจกรรม) เหลือแค่ปุ่มยกรายงาน --}}
                             @if($target !== null)
                                 @php
-                                    $hideLabel = ['activity' => 'ซ่อนกิจกรรม', 'review' => 'ลบรีวิว'][$report->target_type] ?? 'ระงับบัญชีผู้ใช้';
-                                    $hideIcon = ['activity' => 'eye-slash', 'review' => 'trash'][$report->target_type] ?? 'ban';
+                                    $hideLabel = ['activity' => 'ซ่อนกิจกรรม', 'review' => 'ลบรีวิว', 'user_review' => 'ลบรีวิว'][$report->target_type] ?? 'ระงับบัญชีผู้ใช้';
+                                    $hideIcon = ['activity' => 'eye-slash', 'review' => 'trash', 'user_review' => 'trash'][$report->target_type] ?? 'ban';
                                 @endphp
                                 <button name="action" value="hide" class="btn btn-sm bg-bad text-white hover:brightness-110" onclick="return confirm('ยืนยัน{{ $hideLabel }}?')">
                                     <x-ui.icon :name="$hideIcon" class="h-4 w-4" />

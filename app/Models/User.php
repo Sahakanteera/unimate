@@ -87,4 +87,24 @@ class User extends Authenticatable
     {
         return $this->hasMany(Review::class);
     }
+
+    /**
+     * รีวิวคนที่ผู้ใช้คนนี้เขียนถึงคนอื่น
+     *
+     * @return HasMany<UserReview, $this>
+     */
+    public function reviewsWritten(): HasMany
+    {
+        return $this->hasMany(UserReview::class, 'reviewer_id');
+    }
+
+    /**
+     * รีวิวคนที่ผู้ใช้คนนี้ได้รับ (ทั้งในฐานะผู้จัดและผู้เข้าร่วม)
+     *
+     * @return HasMany<UserReview, $this>
+     */
+    public function reviewsReceived(): HasMany
+    {
+        return $this->hasMany(UserReview::class, 'reviewee_id');
+    }
 }

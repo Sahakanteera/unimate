@@ -63,6 +63,13 @@
                                 <x-ui.icon name="chevron-right" class="h-4 w-4" />
                             </a>
                         </div>
+
+                        {{-- กิจกรรมจบแล้ว ผู้จัดยังรีวิวผู้เข้าร่วมที่มาไม่ครบ: ชวนให้คะแนน --}}
+                        @if(($pendingPeople[$activity->id] ?? 0) > 0)
+                            <div class="mt-4 flex justify-end">
+                                <a href="{{ route('activities.people', $activity) }}" class="btn btn-primary btn-sm"><x-ui.icon name="star" solid class="h-4 w-4 text-sun" /> ให้คะแนน <span class="badge-count bg-sun text-night" aria-label="รีวิวค้าง {{ $pendingPeople[$activity->id] }} รายการ">{{ $pendingPeople[$activity->id] }}</span></a>
+                            </div>
+                        @endif
                     </article>
                 @endforeach
             </div>
@@ -125,10 +132,15 @@
                             </div>
                         @endif
 
-                        {{-- มาเข้าร่วมจริง กิจกรรมจบแล้ว และยังไม่รีวิว: ชวนให้คะแนน (เงื่อนไขเดียวกับ Activity::reviewBlockReason) --}}
-                        @if($participation->isApproved() && $participation->attendance === 'present' && $act->isEnded() && ! $act->isHidden() && ! in_array($act->id, $reviewedActivityIds))
+                        {{-- มาเข้าร่วมจริงและกิจกรรมจบแล้ว: ชวนให้คะแนน นับทั้งรีวิวกิจกรรม (เงื่อนไขเดียวกับ Activity::reviewBlockReason)
+                             และรีวิวคนที่ยังค้าง ถ้ายังไม่รีวิวกิจกรรมไปที่ #reviews ไม่อย่างนั้นไปหน้ารีวิวเพื่อนร่วมกิจกรรม --}}
+                        @php
+                            $activityReviewPending = $participation->isApproved() && $participation->attendance === 'present' && $act->status !== 'cancelled' && $act->isEnded() && ! $act->isHidden() && ! in_array($act->id, $reviewedActivityIds);
+                            $reviewTasks = ($activityReviewPending ? 1 : 0) + ($participation->isApproved() && $participation->attendance === 'present' ? ($pendingPeople[$act->id] ?? 0) : 0);
+                        @endphp
+                        @if($reviewTasks > 0)
                             <div class="mt-5 flex justify-end border-t border-line pt-4">
-                                <a href="{{ route('activities.show', $act) }}#reviews" class="btn btn-primary btn-sm"><x-ui.icon name="star" solid class="h-4 w-4 text-sun" /> ให้คะแนน</a>
+                                <a href="{{ $activityReviewPending ? route('activities.show', $act).'#reviews' : route('activities.people', $act) }}" class="btn btn-primary btn-sm"><x-ui.icon name="star" solid class="h-4 w-4 text-sun" /> ให้คะแนน <span class="badge-count bg-sun text-night" aria-label="รีวิวค้าง {{ $reviewTasks }} รายการ">{{ $reviewTasks }}</span></a>
                             </div>
                         @endif
                     </article>

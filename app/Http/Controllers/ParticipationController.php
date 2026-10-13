@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Activity;
 use App\Models\ActivityParticipant;
+use App\Models\UserReview;
 use App\Notifications\ActivityNotification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -121,7 +122,12 @@ class ParticipationController extends Controller
             ->groupBy('status')
             ->pluck('total', 'status');
 
-        return view('activities.requests', compact('activity', 'participants', 'statusFilter', 'counts'));
+        // คะแนนในฐานะผู้เข้าร่วมและสถิติมาตามนัดของผู้ขอทุกคน คำนวณแบบรวม query (ไม่ query ทีละคน)
+        $userIds = $participants->pluck('user_id')->all();
+        $ratings = UserReview::ratingsFor($userIds, 'participant');
+        $attendance = ActivityParticipant::attendanceFor($userIds);
+
+        return view('activities.requests', compact('activity', 'participants', 'statusFilter', 'counts', 'ratings', 'attendance'));
     }
 
     /** Host อนุมัติคำขอ — ใช้ DB::transaction ป้องกัน race condition */

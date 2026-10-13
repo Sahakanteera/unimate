@@ -33,7 +33,7 @@
                 <p class="break-anywhere mt-4 whitespace-pre-wrap rounded-tile bg-canvas px-4 py-3 text-sm leading-relaxed text-ink-soft">“{{ $user->bio }}”</p>
             @endif
 
-            <dl class="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <dl class="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-5">
                 <div class="stat min-w-0">
                     <dt class="stat-label mb-1 mt-0">กิจกรรมที่จัด</dt>
                     <dd class="stat-value">{{ $stats['hosted'] }}</dd>
@@ -44,14 +44,28 @@
                     <dd class="stat-value">{{ $stats['attended'] }}</dd>
                     <dd class="stat-label">มาจริงตามการเช็กชื่อ และกิจกรรมจบแล้ว</dd>
                 </div>
-                <div class="stat min-w-0">
-                    <dt class="stat-label mb-1 mt-0">คะแนนจากการจัดกิจกรรม</dt>
-                    @if($stats['reviews'] > 0)
-                        <dd class="stat-value flex items-center gap-1.5"><x-ui.icon name="star" solid class="h-5 w-5 text-sun" /> {{ number_format((float) $stats['rating'], 1) }}</dd>
-                        <dd class="stat-label">จาก {{ $stats['reviews'] }} รีวิวของผู้เข้าร่วม</dd>
+                {{-- คะแนนจากรีวิวคน (user_reviews) แยกตามบทบาท ไม่ใช้รีวิวกิจกรรม --}}
+                @foreach(['host' => 'คะแนนในฐานะผู้จัด', 'participant' => 'คะแนนในฐานะผู้เข้าร่วม'] as $role => $label)
+                    @php $rating = $stats[$role.'_rating']; @endphp
+                    <div class="stat min-w-0">
+                        <dt class="stat-label mb-1 mt-0">{{ $label }}</dt>
+                        @if($rating)
+                            <dd class="stat-value flex items-center gap-1.5"><x-ui.icon name="star" solid class="h-5 w-5 text-sun" /> {{ number_format($rating['rating'], 1) }}</dd>
+                            <dd class="stat-label">จาก {{ $rating['total'] }} รีวิว</dd>
+                        @else
+                            <dd class="stat-value text-ink-muted">–</dd>
+                            <dd class="stat-label">ยังไม่มีรีวิว</dd>
+                        @endif
+                    </div>
+                @endforeach
+                <div class="stat col-span-2 min-w-0 lg:col-span-1">
+                    <dt class="stat-label mb-1 mt-0">มาตามนัด</dt>
+                    @if($stats['attendance'])
+                        <dd class="stat-value tabular-nums">{{ $stats['attendance']['present'] }}<span class="text-base text-ink-faint">/{{ $stats['attendance']['total'] }} ครั้ง</span></dd>
+                        <dd class="stat-label">จากกิจกรรมที่จบและเช็กชื่อแล้ว</dd>
                     @else
                         <dd class="stat-value text-ink-muted">–</dd>
-                        <dd class="stat-label">ยังไม่มีรีวิวกิจกรรมที่จัด</dd>
+                        <dd class="stat-label">ยังไม่มีประวัติการเช็กชื่อ</dd>
                     @endif
                 </div>
             </dl>
@@ -93,17 +107,28 @@
         @endif
     </section>
 
-    {{-- รีวิวล่าสุดที่ได้รับในฐานะผู้จัด --}}
-    <section id="reviews" class="card mt-10 scroll-mt-28 p-6 sm:p-8" aria-labelledby="reviews-heading">
-        <h2 id="reviews-heading" class="section-title">รีวิวล่าสุดจากผู้เข้าร่วมกิจกรรมที่จัด</h2>
-        @if($recentReviews->isNotEmpty())
+    {{-- รีวิวคนที่ได้รับ แยก 2 แท็บด้วย query string (?tab=host|participant) ไม่ใช้ JS --}}
+    @php
+        $reviewTabs = ['host' => 'ในฐานะผู้จัด', 'participant' => 'ในฐานะผู้เข้าร่วม'];
+        $viewer = Auth::user();
+    @endphp
+    <section id="received-reviews" class="card mt-10 scroll-mt-28 p-6 sm:p-8" aria-labelledby="reviews-heading">
+        <h2 id="reviews-heading" class="section-title">รีวิวที่ได้รับ</h2>
+        <nav class="tabs mt-3" aria-label="ประเภทรีวิวที่ได้รับ">
+            @foreach($reviewTabs as $key => $label)
+                <a href="{{ route('users.show', ['user' => $user, 'tab' => $key]) }}#received-reviews" @if($tab === $key) aria-current="page" @endif
+                   class="tab {{ $tab === $key ? 'tab-active' : '' }}">{{ $label }} <span class="tab-count">{{ $stats[$key.'_rating']['total'] ?? 0 }}</span></a>
+            @endforeach
+        </nav>
+
+        @if($receivedReviews->isNotEmpty())
             <ul class="mt-5 divide-y divide-line">
-                @foreach($recentReviews as $review)
+                @foreach($receivedReviews as $review)
                     <li class="py-4 first:pt-0 last:pb-0">
                         <div class="flex items-center justify-between gap-3">
                             <div class="flex min-w-0 items-center gap-2.5">
-                                <x-ui.avatar :user="$review->user" size="sm" />
-                                <p class="truncate text-sm font-medium text-ink" title="{{ $review->user->name }}"><x-ui.user-link :user="$review->user">{{ $review->user->name }}</x-ui.user-link></p>
+                                <x-ui.avatar :user="$review->reviewer" size="sm" />
+                                <p class="truncate text-sm font-medium text-ink" title="{{ $review->reviewer->name }}"><x-ui.user-link :user="$review->reviewer">{{ $review->reviewer->name }}</x-ui.user-link></p>
                             </div>
                             <p class="flex shrink-0" role="img" aria-label="{{ $review->rating }} จาก 5 ดาว">@for($i = 1; $i <= 5; $i++)<x-ui.icon name="star" solid class="h-4 w-4 {{ $i <= $review->rating ? 'text-sun' : 'text-line-strong' }}" />@endfor</p>
                         </div>
@@ -111,12 +136,39 @@
                         <p class="break-anywhere mt-2 text-xs text-ink-faint">
                             กิจกรรม <a href="{{ route('activities.show', $review->activity) }}" class="link">{{ $review->activity->title }}</a>
                             · <x-ui.time :value="$review->created_at" mode="date" />
+                            @if($review->updated_at && $review->updated_at->gt($review->created_at)) · แก้ไขแล้ว @endif
                         </p>
+
+                        @if($review->reviewer_id === $viewer->id)
+                            {{-- รีวิวที่ฉันเขียน แก้ไข/ลบได้ที่หน้ารีวิวเพื่อนร่วมกิจกรรม --}}
+                            <a href="{{ route('activities.people', $review->activity) }}#person-{{ $user->id }}" class="link mt-2 inline-flex items-center gap-1 text-xs">แก้ไขรีวิวของคุณ <x-ui.icon name="chevron-right" class="h-3.5 w-3.5" /></a>
+                        @elseif($viewer->isAdmin())
+                            @include('users.partials.admin-delete-user-review', ['review' => $review, 'open' => (int) old('user_review_id') === $review->id])
+                        @else
+                            {{-- รายงานรีวิวที่ไม่เหมาะสม error เปิดเฉพาะฟอร์มของรีวิวที่ส่ง (hidden report_user_review_id) --}}
+                            @php $reportFormOpen = (int) old('report_user_review_id') === $review->id && $errors->has('user_review_reason'); @endphp
+                            <details class="group mt-2" @if($reportFormOpen) open @endif>
+                                <summary class="inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-ink-muted transition hover:bg-bad-soft hover:text-bad">
+                                    <x-ui.icon name="flag" class="h-3.5 w-3.5" /> รายงาน
+                                </summary>
+                                <form method="POST" action="{{ route('user-reviews.report', $review) }}" class="mt-2 space-y-2">
+                                    @csrf
+                                    <input type="hidden" name="report_user_review_id" value="{{ $review->id }}">
+                                    <label for="user-review-report-{{ $review->id }}" class="sr-only">เหตุผลที่รายงานรีวิวนี้</label>
+                                    <textarea id="user-review-report-{{ $review->id }}" name="user_review_reason" rows="2" minlength="5" maxlength="1000" required placeholder="รีวิวนี้ไม่เหมาะสมอย่างไร เช่น ใช้คำหยาบ หรือให้ข้อมูลเท็จ" class="field text-sm @if($reportFormOpen) field-invalid @endif" @if($reportFormOpen) aria-invalid="true" aria-describedby="user-review-report-error-{{ $review->id }}" @endif>{{ $reportFormOpen ? old('user_review_reason') : '' }}</textarea>
+                                    @if($reportFormOpen)
+                                        @error('user_review_reason')<p id="user-review-report-error-{{ $review->id }}" class="field-error">{{ $message }}</p>@enderror
+                                    @endif
+                                    <button class="btn btn-danger btn-sm">ส่งรายงานรีวิว</button>
+                                </form>
+                            </details>
+                        @endif
                     </li>
                 @endforeach
             </ul>
+            <div class="mt-6">{{ $receivedReviews->links('partials.pagination') }}</div>
         @else
-            <p class="mt-4 rounded-tile bg-canvas p-4 text-center text-sm text-ink-muted">ยังไม่มีรีวิวจากกิจกรรมที่{{ $possessive }}จัด</p>
+            <p class="mt-4 rounded-tile bg-canvas p-4 text-center text-sm text-ink-muted">{{ $possessive }}ยังไม่มีรีวิว{{ $reviewTabs[$tab] }}</p>
         @endif
     </section>
 </div>

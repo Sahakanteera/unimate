@@ -3,8 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Activity;
-use App\Models\Review;
+use App\Models\ActivityParticipant;
 use App\Models\User;
+use App\Models\UserReview;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -12,7 +13,7 @@ use Illuminate\Http\Request;
 class UserProfileController extends Controller
 {
     /**
-     * โปรไฟล์สาธารณะ: ข้อมูลพื้นฐาน ตัวเลขสรุป ประวัติกิจกรรม และรีวิวที่ได้รับในฐานะผู้จัด
+     * โปรไฟล์สาธารณะ: ข้อมูลพื้นฐาน ตัวเลขสรุป ประวัติกิจกรรม และรีวิวคนที่ได้รับ (แยกแท็บผู้จัด/ผู้เข้าร่วม)
      * ไม่ส่งอีเมลและรหัสนักศึกษาไปที่หน้าเว็บ (ข้อมูลส่วนตัว)
      */
     public function show(Request $request, User $user): View
@@ -32,17 +33,14 @@ class UserProfileController extends Controller
                 $query->where('user_id', $user->id)->where('status', 'approved')->where('attendance', 'present');
             });
 
-        // รีวิวของกิจกรรมที่คนนี้จัด ไม่นับกิจกรรมที่ถูกซ่อน
-        $hostReviewsQuery = fn (): Builder => Review::query()
-            ->whereHas('activity', function ($query) use ($user) {
-                $query->where('user_id', $user->id)->whereNull('hidden_at');
-            });
-
+        // คะแนนจากรีวิวคน (user_reviews) แยกตามบทบาท ไม่นับกิจกรรมที่ถูกซ่อน
+        // รีวิวกิจกรรมยังแสดงเป็นคะแนนของกิจกรรมที่การ์ดกิจกรรม แต่ไม่ใช้เป็นคะแนนของคน
         $stats = [
             'hosted' => $user->activities()->where('status', '!=', 'cancelled')->whereNull('hidden_at')->count(),
             'attended' => $attendedQuery()->count(),
-            'rating' => $hostReviewsQuery()->avg('rating'),
-            'reviews' => $hostReviewsQuery()->count(),
+            'host_rating' => UserReview::ratingsFor([$user->id], 'host')->get($user->id),
+            'participant_rating' => UserReview::ratingsFor([$user->id], 'participant')->get($user->id),
+            'attendance' => ActivityParticipant::attendanceFor([$user->id])->get($user->id),
         ];
 
         // x-activity-card ต้องมี user, category และตัวนับจาก withCount/withAvg
@@ -67,12 +65,22 @@ class UserProfileController extends Controller
             ->withQueryString()
             ->fragment('attended');
 
-        $recentReviews = $hostReviewsQuery()
-            ->with(['user', 'activity'])
-            ->latest()
-            ->limit(10)
-            ->get();
+        // แท็บรีวิวที่ได้รับ (query string ?tab=host|participant) ค่าเริ่มต้นคือแท็บผู้จัด
+        // ยกเว้นยังไม่มีรีวิวในฐานะผู้จัดแต่มีในฐานะผู้เข้าร่วม
+        $tab = $request->query('tab');
+        if (! in_array($tab, ['host', 'participant'], true)) {
+            $tab = $stats['host_rating'] === null && $stats['participant_rating'] !== null ? 'participant' : 'host';
+        }
 
-        return view('users.show', compact('user', 'isSelf', 'stats', 'hosted', 'attended', 'recentReviews'));
+        $receivedReviews = $user->reviewsReceived()
+            ->where('reviewee_role', $tab)
+            ->whereHas('activity', fn ($query) => $query->whereNull('hidden_at'))
+            ->with(['reviewer', 'activity'])
+            ->latest()
+            ->paginate(10, ['*'], 'reviews_page')
+            ->withQueryString()
+            ->fragment('received-reviews');
+
+        return view('users.show', compact('user', 'isSelf', 'stats', 'hosted', 'attended', 'tab', 'receivedReviews'));
     }
 }
