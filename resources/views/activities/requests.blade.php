@@ -58,7 +58,7 @@
                         <x-ui.avatar :user="$p->user" size="lg" />
                         <div class="min-w-0 flex-1">
                             <div class="flex flex-wrap items-center gap-2">
-                                <p class="break-anywhere font-medium text-ink">{{ $p->user->name }}</p>
+                                <p class="break-anywhere font-medium text-ink"><x-ui.user-link :user="$p->user" title="ดูโปรไฟล์และประวัติการเข้าร่วม">{{ $p->user->name }}</x-ui.user-link></p>
                                 @if($p->user->student_id)
                                     <span class="text-xs text-ink-muted">({{ $p->user->student_id }})</span>
                                 @endif
@@ -83,7 +83,10 @@
                     <div class="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end sm:pt-1">
                         {{-- กรณีสถานะเป็น pending: แสดงปุ่ม อนุมัติ / ปฏิเสธ --}}
                         @if($p->isPending())
-                            @if(! $isFull)
+                            @if($activity->starts_at->isPast())
+                                {{-- เซิร์ฟเวอร์ไม่ให้อนุมัติหลังกิจกรรมเริ่ม จึงไม่แสดงปุ่มที่กดแล้วได้แต่ error --}}
+                                <span class="chip">ปิดรับแล้ว</span>
+                            @elseif(! $isFull)
                                 <form method="POST" action="{{ route('activities.requests.approve', [$activity, $p]) }}">
                                     @csrf @method('PATCH')
                                     <button class="btn btn-success btn-sm"><x-ui.icon name="check" class="h-4 w-4" /> อนุมัติ</button>
@@ -91,7 +94,7 @@
                             @else
                                 <span class="chip chip-bad">เต็มแล้ว</span>
                             @endif
-                            <form method="POST" action="{{ route('activities.requests.reject', [$activity, $p]) }}" onsubmit="return confirm('ยืนยันปฏิเสธคำขอของ {{ $p->user->name }}?')">
+                            <form method="POST" action="{{ route('activities.requests.reject', [$activity, $p]) }}" onsubmit="return confirm({{ Js::from('ยืนยันปฏิเสธคำขอของ '.$p->user->name.'?') }})">
                                 @csrf @method('PATCH')
                                 <button class="btn btn-danger btn-sm">ปฏิเสธ</button>
                             </form>

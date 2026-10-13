@@ -5,6 +5,7 @@ use App\Models\ActivityParticipant;
 use App\Models\Category;
 use App\Models\ModerationLog;
 use App\Models\Report;
+use App\Models\Review;
 use App\Models\User;
 
 // ──────────────── Helpers (ชื่อขึ้นต้น p5 เพื่อไม่ชนกับ helper ใน ParticipationTest) ────────────────
@@ -283,4 +284,340 @@ test('Admin เลิกซ่อนกิจกรรมพร้อมบั�
 
     expect($activity->fresh()->hidden_at)->toBeNull();
     $this->assertDatabaseHas('moderation_logs', ['action' => 'unhide_activity', 'target_id' => $activity->id, 'reason' => 'ตรวจแล้วไม่ผิด']);
+});
+
+// ──────────────── แก้ไข/ลบรีวิว และการแจ้งเตือน ────────────────
+
+test('ผู้จัดได้รับแจ้งเตือนเมื่อมีรีวิวใหม่', function () {
+    $host = p5User('host@test.com');
+    $a = p5User('a@test.com');
+    $activity = p5Activity($host);
+    p5Participant($activity, $a);
+
+    $this->actingAs($a)->post(route('activities.reviews.store', $activity), ['rating' => 4]);
+
+    expect($host->fresh()->notifications)->toHaveCount(1);
+    expect($host->fresh()->notifications->first()->data['message'])->toContain('4 ดาว')->toContain('เล่นบาสเย็นนี้');
+});
+
+test('เจ้าของรีวิวแก้ไขและลบรีวิวของตัวเองได้ และหน้ากิจกรรมแสดงฟอร์มแก้ไข', function () {
+    $host = p5User('host@test.com');
+    $a = p5User('a@test.com');
+    $activity = p5Activity($host);
+    p5Participant($activity, $a);
+    $this->actingAs($a)->post(route('activities.reviews.store', $activity), ['rating' => 2, 'comment' => 'ธรรมดา']);
+    $review = Review::firstOrFail();
+
+    $this->actingAs($a)->get(route('activities.show', $activity))
+        ->assertOk()->assertSee('รีวิวของคุณ')->assertSee('บันทึกการแก้ไข')
+        ->assertDontSee('ส่งรีวิว')->assertDontSee('คุณรีวิวกิจกรรมนี้ไปแล้ว');
+
+    $this->actingAs($a)->patch(route('activities.reviews.update', [$activity, $review]), ['rating' => 5, 'comment' => 'ดีกว่าที่คิด'])
+        ->assertSessionHas('success');
+    expect($review->fresh()->rating)->toBe(5);
+    expect($review->fresh()->comment)->toBe('ดีกว่าที่คิด');
+
+    $this->actingAs($a)->patch(route('activities.reviews.update', [$activity, $review]), ['rating' => 9])
+        ->assertSessionHasErrors('rating');
+    expect($review->fresh()->rating)->toBe(5);
+
+    $this->actingAs($a)->delete(route('activities.reviews.destroy', [$activity, $review]))->assertSessionHas('success');
+    $this->assertDatabaseCount('reviews', 0);
+});
+
+test('แก้ไขหรือลบรีวิวของคนอื่นไม่ได้ และรีวิวต้องเป็นของกิจกรรมใน URL', function () {
+    $host = p5User('host@test.com');
+    $a = p5User('a@test.com');
+    $b = p5User('b@test.com');
+    $activity = p5Activity($host);
+    $other = p5Activity($host);
+    p5Participant($activity, $a);
+    $this->actingAs($a)->post(route('activities.reviews.store', $activity), ['rating' => 4]);
+    $review = Review::firstOrFail();
+
+    $this->actingAs($b)->patch(route('activities.reviews.update', [$activity, $review]), ['rating' => 1])->assertForbidden();
+    $this->actingAs($b)->delete(route('activities.reviews.destroy', [$activity, $review]))->assertForbidden();
+    $this->actingAs($host)->delete(route('activities.reviews.destroy', [$activity, $review]))->assertForbidden();
+    $this->actingAs($a)->patch(route('activities.reviews.update', [$other, $review]), ['rating' => 1])->assertNotFound();
+
+    expect($review->fresh()->rating)->toBe(4);
+});
+
+test('แก้ไขรีวิวในกิจกรรมที่ถูกซ่อนไม่ได้', function () {
+    $host = p5User('host@test.com');
+    $a = p5User('a@test.com');
+    $activity = p5Activity($host);
+    p5Participant($activity, $a);
+    $this->actingAs($a)->post(route('activities.reviews.store', $activity), ['rating' => 4]);
+    $activity->hidden_at = now();
+    $activity->save();
+
+    $this->actingAs($a)->patch(route('activities.reviews.update', [$activity, Review::firstOrFail()]), ['rating' => 1])
+        ->assertSessionHas('error');
+    expect(Review::firstOrFail()->rating)->toBe(4);
+});
+
+test('Admin ลบรีวิวไม่เหมาะสมพร้อมเหตุผล บันทึกประวัติ และแจ้งผู้เขียนรีวิว', function () {
+    $admin = p5User('admin@test.com', 'admin');
+    $host = p5User('host@test.com');
+    $a = p5User('a@test.com');
+    $activity = p5Activity($host);
+    p5Participant($activity, $a);
+    $this->actingAs($a)->post(route('activities.reviews.store', $activity), ['rating' => 1, 'comment' => 'คำหยาบ']);
+    $review = Review::firstOrFail();
+
+    $this->actingAs($admin)->get(route('activities.show', $activity))->assertOk()->assertSee('ลบรีวิวนี้ (ผู้ดูแลระบบ)');
+
+    $this->actingAs($admin)->delete(route('admin.reviews.destroy', $review), ['moderation_reason' => ''])
+        ->assertSessionHasErrors('moderation_reason');
+    $this->assertDatabaseCount('reviews', 1);
+
+    $this->actingAs($admin)->delete(route('admin.reviews.destroy', $review), ['moderation_reason' => 'ใช้คำไม่สุภาพ'])
+        ->assertSessionHas('success');
+
+    $this->assertDatabaseCount('reviews', 0);
+    $this->assertDatabaseHas('moderation_logs', [
+        'admin_id' => $admin->id, 'action' => 'delete_review', 'target_type' => 'review', 'target_id' => $review->id, 'reason' => 'ใช้คำไม่สุภาพ',
+    ]);
+    expect($a->fresh()->notifications->last()->data['message'])->toContain('ใช้คำไม่สุภาพ');
+
+    $this->actingAs($admin)->get(route('admin.reports.index', ['status' => 'all']))->assertOk()->assertSee('ลบรีวิว');
+});
+
+test('นักศึกษาใช้ช่องทาง Admin ลบรีวิวคนอื่นไม่ได้ และไม่เห็นปุ่มลบของผู้ดูแล', function () {
+    $host = p5User('host@test.com');
+    $a = p5User('a@test.com');
+    $b = p5User('b@test.com');
+    $activity = p5Activity($host);
+    p5Participant($activity, $a);
+    p5Participant($activity, $b);
+    $this->actingAs($a)->post(route('activities.reviews.store', $activity), ['rating' => 5]);
+
+    $this->actingAs($b)->get(route('activities.show', $activity))->assertOk()->assertDontSee('ลบรีวิวนี้ (ผู้ดูแลระบบ)');
+    $this->actingAs($b)->delete(route('admin.reviews.destroy', Review::firstOrFail()), ['moderation_reason' => 'ไม่ชอบรีวิวนี้'])
+        ->assertForbidden();
+    $this->assertDatabaseCount('reviews', 1);
+    expect(ModerationLog::count())->toBe(0);
+});
+
+test('นัดของฉันมีปุ่มให้คะแนนเฉพาะกิจกรรมที่จบแล้ว มาจริง และยังไม่รีวิว', function () {
+    $host = p5User('host@test.com');
+    $a = p5User('a@test.com');
+    $activity = p5Activity($host);
+    p5Participant($activity, $a);
+
+    $this->actingAs($a)->get(route('my-activities.index'))->assertOk()
+        ->assertSee('ให้คะแนน')->assertSee(route('activities.show', $activity).'#reviews', false);
+
+    $this->actingAs($a)->post(route('activities.reviews.store', $activity), ['rating' => 5]);
+    // ตรวจจากลิงก์ เพราะคำว่า "ให้คะแนน" มีในคอมเมนต์ CSS ของธีมด้วย
+    $this->actingAs($a)->get(route('my-activities.index'))->assertOk()
+        ->assertDontSee(route('activities.show', $activity).'#reviews', false);
+});
+
+// ──────────────── รายงานรีวิว ────────────────
+
+/** สร้างกิจกรรมที่จบแล้ว พร้อมรีวิว 1 ดาวจาก $author */
+function p5ReviewedActivity(User $host, User $author, string $comment = 'รีวิวคำหยาบ'): Review
+{
+    $activity = p5Activity($host);
+    p5Participant($activity, $author);
+    $review = new Review(['rating' => 1, 'comment' => $comment]);
+    $review->activity()->associate($activity);
+    $review->user()->associate($author);
+    $review->save();
+
+    return $review;
+}
+
+test('ผู้ใช้รายงานรีวิวของคนอื่นได้ แต่รายงานรีวิวตัวเองหรือรายงานซ้ำขณะรอตรวจไม่ได้', function () {
+    $host = p5User('host@test.com');
+    $a = p5User('a@test.com');
+    $b = p5User('b@test.com');
+    $review = p5ReviewedActivity($host, $a);
+    $activity = $review->activity;
+    $url = route('activities.reviews.report', [$activity, $review]);
+
+    // ปุ่มรายงานแสดงกับคนอื่น แต่ไม่แสดงกับเจ้าของรีวิว
+    $this->actingAs($b)->get(route('activities.show', $activity))->assertOk()->assertSee($url, false);
+    $this->actingAs($a)->get(route('activities.show', $activity))->assertOk()->assertDontSee($url, false);
+
+    $this->actingAs($b)->post($url, ['review_reason' => ''])
+        ->assertSessionHasErrors('review_reason')->assertSessionDoesntHaveErrors('reason');
+    $this->actingAs($b)->post($url, ['review_reason' => 'ใช้คำหยาบใส่ผู้จัด'])->assertSessionHas('success');
+    $this->actingAs($b)->post($url, ['review_reason' => 'รายงานซ้ำอีกครั้ง'])
+        ->assertSessionHas('error', 'คุณรายงานเรื่องนี้ไปแล้ว กำลังรอผู้ดูแลระบบตรวจสอบ');
+    $this->actingAs($a)->post($url, ['review_reason' => 'รายงานรีวิวตัวเอง'])->assertSessionHas('error');
+
+    $this->assertDatabaseCount('reports', 1);
+    $this->assertDatabaseHas('reports', ['reporter_id' => $b->id, 'target_type' => 'review', 'target_id' => $review->id, 'status' => 'pending']);
+});
+
+test('รายงานรีวิวผ่าน URL ของกิจกรรมอื่นได้ 404 และ Admin ไม่เห็นปุ่มรายงานรีวิว', function () {
+    $admin = p5User('admin@test.com', 'admin');
+    $host = p5User('host@test.com');
+    $a = p5User('a@test.com');
+    $b = p5User('b@test.com');
+    $review = p5ReviewedActivity($host, $a);
+    $other = p5Activity($host);
+
+    $this->actingAs($b)->post(route('activities.reviews.report', [$other, $review]), ['review_reason' => 'ผิดกิจกรรม'])->assertNotFound();
+    $this->assertDatabaseCount('reports', 0);
+
+    $this->actingAs($admin)->get(route('activities.show', $review->activity))->assertOk()
+        ->assertDontSee(route('activities.reviews.report', [$review->activity, $review]), false);
+});
+
+test('Admin ลบรีวิวผ่านรายงาน: รีวิวหายไป บันทึกประวัติพร้อม report_id ปิดรายงาน และแจ้งทั้งผู้เขียนและผู้รายงาน', function () {
+    $admin = p5User('admin@test.com', 'admin');
+    $host = p5User('host@test.com');
+    $a = p5User('a@test.com');
+    $b = p5User('b@test.com');
+    $review = p5ReviewedActivity($host, $a, 'ความเห็นไม่สุภาพมาก');
+    $this->actingAs($b)->post(route('activities.reviews.report', [$review->activity, $review]), ['review_reason' => 'ใช้คำไม่สุภาพ']);
+    $report = Report::firstOrFail();
+
+    $this->actingAs($admin)->get(route('admin.reports.index'))->assertOk()
+        ->assertSee('ความเห็นไม่สุภาพมาก')->assertSee('ใช้คำไม่สุภาพ')
+        ->assertSee(route('users.show', $a), false)
+        ->assertSee(route('activities.show', $review->activity).'#reviews', false);
+
+    $this->actingAs($admin)->patch(route('admin.reports.resolve', $report), ['action' => 'hide', 'note' => 'ผิดกฎชุมชน'])
+        ->assertSessionHas('success');
+
+    $this->assertDatabaseCount('reviews', 0);
+    $this->assertDatabaseHas('moderation_logs', [
+        'admin_id' => $admin->id, 'report_id' => $report->id, 'action' => 'delete_review',
+        'target_type' => 'review', 'target_id' => $review->id, 'reason' => 'ผิดกฎชุมชน',
+    ]);
+    expect(ModerationLog::count())->toBe(1);
+    expect($report->fresh()->status)->toBe('actioned');
+    expect($report->fresh()->handled_by)->toBe($admin->id);
+    expect($a->fresh()->notifications->last()->data['message'])->toContain('ผิดกฎชุมชน');
+    expect($b->fresh()->notifications->last()->data['message'])->toContain('ดำเนินการกับรายงานของคุณแล้ว');
+
+    // หน้า Admin ยังเปิดได้ และแสดงว่ารีวิวถูกลบแล้ว
+    $this->actingAs($admin)->get(route('admin.reports.index', ['status' => 'all']))->assertOk()->assertSee('รีวิวถูกลบแล้ว');
+});
+
+test('Admin ยกรายงานรีวิวได้ รีวิวยังอยู่', function () {
+    $admin = p5User('admin@test.com', 'admin');
+    $host = p5User('host@test.com');
+    $a = p5User('a@test.com');
+    $b = p5User('b@test.com');
+    $review = p5ReviewedActivity($host, $a);
+    $this->actingAs($b)->post(route('activities.reviews.report', [$review->activity, $review]), ['review_reason' => 'ไม่ชอบรีวิวนี้']);
+    $report = Report::firstOrFail();
+
+    $this->actingAs($admin)->patch(route('admin.reports.resolve', $report), ['action' => 'dismiss', 'note' => 'ไม่ผิดกฎ'])
+        ->assertSessionHas('success');
+
+    $this->assertDatabaseCount('reviews', 1);
+    expect($report->fresh()->status)->toBe('dismissed');
+    $this->assertDatabaseHas('moderation_logs', ['action' => 'dismiss', 'target_type' => 'review', 'report_id' => $report->id]);
+    expect($b->fresh()->notifications)->toHaveCount(1);
+    expect($a->fresh()->notifications)->toHaveCount(0);
+});
+
+test('Admin ลบรีวิวจากหน้ากิจกรรม: รายงานของรีวิวนั้นที่รอตรวจถูกปิด และหน้าตรวจรายงานไม่พัง', function () {
+    $admin = p5User('admin@test.com', 'admin');
+    $host = p5User('host@test.com');
+    $a = p5User('a@test.com');
+    $b = p5User('b@test.com');
+    $review = p5ReviewedActivity($host, $a);
+    $this->actingAs($b)->post(route('activities.reviews.report', [$review->activity, $review]), ['review_reason' => 'ใช้คำไม่สุภาพ']);
+    $this->actingAs($host)->post(route('activities.reviews.report', [$review->activity, $review]), ['review_reason' => 'ข้อมูลเท็จทั้งหมด']);
+    expect(Report::where('status', 'pending')->count())->toBe(2);
+
+    $this->actingAs($admin)->delete(route('admin.reviews.destroy', $review), ['moderation_reason' => 'ลบตามรายงาน'])
+        ->assertSessionHas('success');
+
+    expect(Report::where('status', 'actioned')->where('handled_by', $admin->id)->count())->toBe(2);
+    expect($b->fresh()->notifications)->toHaveCount(1);
+    $this->assertDatabaseHas('moderation_logs', ['action' => 'delete_review', 'report_id' => null, 'target_id' => $review->id]);
+
+    $this->actingAs($admin)->get(route('admin.reports.index', ['status' => 'all']))->assertOk()->assertSee('รีวิวถูกลบแล้ว');
+});
+
+test('รายงานรีวิวที่ถูกลบไปก่อนแล้ว: หน้า Admin แสดงว่าถูกลบ ลบซ้ำไม่ได้ แต่ยกรายงานได้', function () {
+    $admin = p5User('admin@test.com', 'admin');
+    $host = p5User('host@test.com');
+    $a = p5User('a@test.com');
+    $b = p5User('b@test.com');
+    $review = p5ReviewedActivity($host, $a);
+    $this->actingAs($b)->post(route('activities.reviews.report', [$review->activity, $review]), ['review_reason' => 'ใช้คำไม่สุภาพ']);
+    $report = Report::firstOrFail();
+    $review->delete(); // เจ้าของลบเอง รายงานยังรอตรวจ
+
+    $this->actingAs($admin)->get(route('admin.reports.index'))->assertOk()
+        ->assertSee('รีวิวถูกลบแล้ว')->assertDontSee('value="hide"', false);
+
+    $this->actingAs($admin)->patch(route('admin.reports.resolve', $report), ['action' => 'hide', 'note' => 'ลบรีวิว'])
+        ->assertSessionHas('error');
+    $this->actingAs($admin)->patch(route('admin.reports.resolve', $report), ['action' => 'dismiss', 'note' => 'รีวิวถูกลบไปแล้ว'])
+        ->assertSessionHas('success');
+    expect($report->fresh()->status)->toBe('dismissed');
+});
+
+// ──────────────── รอบตรวจงาน: กรณีขอบที่เคยหลุด ────────────────
+
+test('กิจกรรมที่ถูกยกเลิกหรือถูกซ่อน รีวิวผ่าน URL ตรงไม่ได้', function () {
+    $host = p5User('edge-host@test.com');
+    $member = p5User('edge-member@test.com');
+
+    $cancelled = p5Activity($host);
+    $cancelled->status = 'cancelled';
+    $cancelled->save();
+    p5Participant($cancelled, $member);
+    $this->actingAs($member)->post(route('activities.reviews.store', $cancelled), ['rating' => 5])->assertSessionHas('error');
+
+    $hidden = p5Activity($host);
+    $hidden->hidden_at = now();
+    $hidden->save();
+    p5Participant($hidden, $member);
+    $this->post(route('activities.reviews.store', $hidden), ['rating' => 5])->assertSessionHas('error');
+
+    expect(Review::count())->toBe(0);
+});
+
+test('รายงานกิจกรรมที่ถูกซ่อนผ่าน URL ตรงไม่ได้ (เห็นเป็น 404 เหมือนหน้ากิจกรรม)', function () {
+    $host = p5User('hide-host@test.com');
+    $other = p5User('hide-other@test.com');
+    $activity = p5Activity($host);
+    $activity->hidden_at = now();
+    $activity->save();
+
+    $this->actingAs($other)->post(route('activities.reports.store', $activity), ['target' => 'activity', 'reason' => 'ลองรายงานดู'])->assertNotFound();
+    expect(Report::count())->toBe(0);
+});
+
+test('Admin ไม่เห็นฟอร์มรายงานและข้อความสิทธิ์รีวิวในหน้ากิจกรรม', function () {
+    $host = p5User('adm-host@test.com');
+    $admin = p5User('adm@test.com', 'admin');
+    $activity = p5Activity($host);
+
+    $this->actingAs($admin)->get(route('activities.show', $activity))->assertOk()
+        ->assertDontSee(route('activities.reports.store', $activity))
+        ->assertDontSee('เฉพาะผู้ที่ได้รับการเช็กชื่อว่ามาเข้าร่วมจริงเท่านั้นที่รีวิวได้');
+});
+
+test('หน้าจัดการคำขอ: กิจกรรมเริ่มแล้วไม่มีปุ่มอนุมัติ และชื่อที่มีเครื่องหมายคำพูดไม่ทำให้สคริปต์ยืนยันพัง', function () {
+    $host = p5User('req-host@test.com');
+    $guest = p5User('req-guest@test.com');
+    $guest->name = "O'Neil </script>";
+    $guest->save();
+
+    $started = p5Activity($host, false);
+    $started->starts_at = now()->subHour();
+    $started->ends_at = now()->addHour();
+    $started->save();
+    $p = p5Participant($started, $guest, 'pending', null);
+
+    $html = $this->actingAs($host)->get(route('activities.requests', $started))->assertOk()
+        ->assertDontSee(route('activities.requests.approve', [$started, $p]))
+        ->assertSee('ปิดรับแล้ว')
+        ->getContent();
+
+    // ชื่อผู้ใช้ต้องไม่หลุดออกจากสตริง JavaScript ใน onsubmit
+    expect($html)->not->toContain("O'Neil")->not->toContain('</script>?');
 });

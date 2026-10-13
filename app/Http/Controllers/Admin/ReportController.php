@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Activity;
 use App\Models\ModerationLog;
 use App\Models\Report;
+use App\Models\Review;
 use App\Models\User;
 use App\Notifications\ActivityNotification;
 use Illuminate\Contracts\View\View;
@@ -41,7 +42,10 @@ class ReportController extends Controller
         ]);
     }
 
-    /** action = hide (ซ่อนกิจกรรม / ระงับผู้ใช้) หรือ dismiss (ไม่ดำเนินการ) ต้องมีเหตุผลเสมอ */
+    /**
+     * action = hide (ซ่อนกิจกรรม / ระงับผู้ใช้ / ลบรีวิว ตามประเภทที่ถูกรายงาน)
+     * หรือ dismiss (ไม่ดำเนินการ) ต้องมีเหตุผลเสมอ
+     */
     public function resolve(Request $request, Report $report): RedirectResponse
     {
         $validated = $request->validate([
@@ -69,47 +73,50 @@ class ReportController extends Controller
         }
 
         DB::transaction(function () use ($validated, $report, $target, $admin) {
-            if ($validated['action'] === 'hide') {
-                if ($target instanceof Activity) {
-                    $target->hidden_at = now();
-                    $target->hidden_reason = $validated['note'];
-                    $target->save();
-                    $logAction = 'hide_activity';
-                } else {
-                    $target->status = 'suspended';
-                    $target->save();
-                    $logAction = 'suspend_user';
-                }
-                $newStatus = 'actioned';
-            } else {
-                $logAction = 'dismiss';
-                $newStatus = 'dismissed';
+            $note = $validated['note'];
+
+            if ($validated['action'] === 'dismiss') {
+                $this->log($admin, $report, 'dismiss', $note);
+                $report->close($admin, 'dismissed', $note);
+
+                return;
             }
 
-            $report->status = $newStatus;
-            $report->admin_note = $validated['note'];
-            $report->handler()->associate($admin);
-            $report->handled_at = now();
-            $report->save();
+            if ($target instanceof Review) {
+                // บันทึกประวัติ (พร้อม report_id) และแจ้งผู้เขียนรีวิวอยู่ใน deleteByAdmin
+                $target->deleteByAdmin($admin, $note, $report);
+            } elseif ($target instanceof Activity) {
+                $target->hidden_at = now();
+                $target->hidden_reason = $note;
+                $target->save();
+                $this->log($admin, $report, 'hide_activity', $note);
+                $target->user->notify(new ActivityNotification(
+                    "กิจกรรม '{$target->title}' ของคุณถูกซ่อนโดยผู้ดูแลระบบ: {$note}",
+                    route('activities.show', $target, false),
+                    'danger'
+                ));
+            } elseif ($target instanceof User) {
+                $target->status = 'suspended';
+                $target->save();
+                $this->log($admin, $report, 'suspend_user', $note);
+            }
 
-            ModerationLog::create([
-                'admin_id' => $admin->id,
-                'report_id' => $report->id,
-                'action' => $logAction,
-                'target_type' => $report->target_type,
-                'target_id' => $report->target_id,
-                'reason' => $validated['note'],
-            ]);
-
-            // แจ้งผู้รายงานผ่านระบบแจ้งเตือนของส่วนที่ 4
-            $report->reporter->notify(new ActivityNotification(
-                $newStatus === 'actioned'
-                    ? 'ผู้ดูแลระบบดำเนินการกับรายงานของคุณแล้ว: '.$validated['note']
-                    : 'ผู้ดูแลระบบตรวจสอบรายงานของคุณแล้ว และไม่พบการกระทำผิด: '.$validated['note']
-            ));
+            $report->close($admin, 'actioned', $note);
         });
 
         return back()->with('success', 'บันทึกการดำเนินการเรียบร้อยแล้ว');
+    }
+
+    private function log(User $admin, Report $report, string $action, string $note): void
+    {
+        ModerationLog::create([
+            'admin_id' => $admin->id,
+            'report_id' => $report->id,
+            'action' => $action,
+            'target_type' => $report->target_type,
+            'target_id' => $report->target_id,
+            'reason' => $note,
+        ]);
     }
 
     /** เลิกซ่อนกิจกรรม พร้อมบันทึกเหตุผล */
@@ -137,6 +144,12 @@ class ReportController extends Controller
             'target_id' => $activity->id,
             'reason' => $validated['note'],
         ]);
+
+        $activity->user->notify(new ActivityNotification(
+            "กิจกรรม '{$activity->title}' ของคุณกลับมาแสดงตามปกติแล้ว",
+            route('activities.show', $activity, false),
+            'success'
+        ));
 
         return back()->with('success', 'เลิกซ่อนกิจกรรมเรียบร้อยแล้ว');
     }

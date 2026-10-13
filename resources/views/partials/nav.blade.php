@@ -90,8 +90,11 @@
                             </div>
                         </div>
                         <div class="my-1 h-px bg-line"></div>
-                        <a href="{{ route('profile.edit') }}" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-ink-soft transition hover:bg-canvas">
+                        <a href="{{ route('users.show', $authUser) }}" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-ink-soft transition hover:bg-canvas">
                             <x-ui.icon name="user-circle" class="h-4 w-4 text-ink-faint" /> โปรไฟล์ของฉัน
+                        </a>
+                        <a href="{{ route('profile.edit') }}" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-ink-soft transition hover:bg-canvas">
+                            <x-ui.icon name="pencil" class="h-4 w-4 text-ink-faint" /> แก้ไขโปรไฟล์
                         </a>
                         <a href="{{ route('my-activities.index') }}" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-ink-soft transition hover:bg-canvas">
                             <x-ui.icon name="calendar" class="h-4 w-4 text-ink-faint" /> นัดของฉัน

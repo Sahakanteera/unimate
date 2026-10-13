@@ -24,9 +24,12 @@
                     </span>
                     <span class="absolute bottom-1.5 right-1.5 h-4 w-4 rounded-full ring-4 ring-white {{ $user->isActive() ? 'bg-emerald-500' : 'bg-bad' }}" title="{{ $user->isActive() ? 'บัญชีปกติ' : 'ถูกระงับ' }}"></span>
                 </div>
-                @if($user->isAdmin())
-                    <a href="{{ route('admin.users.index') }}" class="btn btn-primary w-full sm:w-auto"><x-ui.icon name="shield" class="h-4 w-4" /> ไปหน้าแดชบอร์ด Admin</a>
-                @endif
+                <div class="flex flex-col gap-2 sm:flex-row">
+                    <a href="{{ route('users.show', $user) }}" class="btn btn-secondary w-full sm:w-auto"><x-ui.icon name="user-circle" class="h-4 w-4" /> ดูโปรไฟล์ที่คนอื่นเห็น</a>
+                    @if($user->isAdmin())
+                        <a href="{{ route('admin.users.index') }}" class="btn btn-primary w-full sm:w-auto"><x-ui.icon name="shield" class="h-4 w-4" /> ไปหน้าแดชบอร์ด Admin</a>
+                    @endif
+                </div>
             </div>
 
             <h1 class="break-anywhere mt-4 text-2xl font-medium tracking-tight text-ink-soft sm:text-3xl">{{ $user->name }}</h1>

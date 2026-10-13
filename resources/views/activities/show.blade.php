@@ -61,7 +61,7 @@
                 </div>
                 <h1 class="break-anywhere mt-3 text-[1.75rem] font-medium leading-tight tracking-tight text-ink-soft sm:text-4xl">{{ $activity->title }}</h1>
                 <div class="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-ink-muted">
-                    <span class="flex min-w-0 items-center gap-2"><x-ui.avatar :user="$activity->user" size="sm" /> ประกาศโดย <span class="truncate font-medium text-ink">{{ $activity->user->name }}</span></span>
+                    <x-ui.user-link :user="$activity->user" class="flex min-w-0 items-center gap-2"><x-ui.avatar :user="$activity->user" size="sm" /> ประกาศโดย <span class="truncate font-medium text-ink">{{ $activity->user->name }}</span></x-ui.user-link>
                     <span aria-hidden="true" class="hidden text-line-strong sm:inline">•</span>
                     <span>อัปเดต <x-ui.time :value="$activity->updated_at" mode="relative" /></span>
                 </div>
@@ -212,9 +212,12 @@
             <x-ui.avatar :user="$activity->user" size="lg" />
             <div class="min-w-0">
                 <p class="text-xs text-ink-muted">ผู้ประกาศกิจกรรม</p>
-                <p class="truncate font-medium text-ink" title="{{ $activity->user->name }}">{{ $activity->user->name }}</p>
+                <p class="truncate font-medium text-ink" title="{{ $activity->user->name }}"><x-ui.user-link :user="$activity->user">{{ $activity->user->name }}</x-ui.user-link></p>
                 @if($activity->user->bio)
                     <p class="break-anywhere mt-1 text-sm text-ink-muted line-clamp-3">{{ $activity->user->bio }}</p>
+                @endif
+                @if(! $activity->user->isSuspended() || Auth::user()->isAdmin())
+                    <a href="{{ route('users.show', $activity->user) }}" class="link mt-2 inline-flex items-center gap-1 text-sm">ดูโปรไฟล์และคะแนนผู้จัด <x-ui.icon name="chevron-right" class="h-4 w-4" /></a>
                 @endif
             </div>
         </div>
@@ -259,7 +262,7 @@
                         <li class="flex items-center gap-3 rounded-tile bg-canvas p-3">
                             <x-ui.avatar :user="$member->user" />
                             <div class="min-w-0">
-                                <p class="truncate text-sm font-medium text-ink" title="{{ $member->user->name }}">{{ $member->user->name }}</p>
+                                <p class="truncate text-sm font-medium text-ink" title="{{ $member->user->name }}"><x-ui.user-link :user="$member->user">{{ $member->user->name }}</x-ui.user-link></p>
                                 <p class="text-xs text-ink-muted">เข้าร่วมเมื่อ <x-ui.time :value="$member->updated_at" mode="relative" /></p>
                             </div>
                         </li>
@@ -296,35 +299,115 @@
                     @error('rating')<p class="field-error">{{ $message }}</p>@enderror
                     <label for="review-comment" class="sr-only">ความคิดเห็น</label>
                     <textarea id="review-comment" name="comment" rows="3" maxlength="1000" placeholder="ความคิดเห็นเพิ่มเติม (ไม่บังคับ)" class="field mt-3">{{ old('comment') }}</textarea>
+                    @error('comment')<p class="field-error">{{ $message }}</p>@enderror
                     <button class="btn btn-primary mt-4">ส่งรีวิว</button>
                 </form>
-            @elseif($activity->isEnded() && Auth::id() !== $activity->user_id)
+            @elseif($myReview)
+                {{-- รีวิวแล้ว: แสดงฟอร์มแก้ไขแทนข้อความแจ้งว่ารีวิวไปแล้ว (กิจกรรมที่ถูกซ่อนแก้ไม่ได้) --}}
+                @if(! $activity->isHidden())
+                    @php $editRating = old('review_form') === 'edit' ? old('rating') : $myReview->rating; @endphp
+                    <form id="review-edit" method="POST" action="{{ route('activities.reviews.update', [$activity, $myReview]) }}" class="mt-5 scroll-mt-40 rounded-2xl bg-tint-butter/30 p-5">
+                        @csrf @method('PATCH')
+                        <input type="hidden" name="review_form" value="edit">
+                        <fieldset>
+                            <legend class="font-medium text-ink">แก้ไขรีวิวของคุณ</legend>
+                            <div class="star-rating mt-2">
+                                @for($i = 5; $i >= 1; $i--)
+                                    <input type="radio" id="edit-rating-{{ $i }}" name="rating" value="{{ $i }}" class="peer sr-only" @checked($editRating == $i) required>
+                                    <label for="edit-rating-{{ $i }}" title="{{ $i }} ดาว"><x-ui.icon name="star" solid class="h-9 w-9" /><span class="sr-only">{{ $i }} ดาว</span></label>
+                                @endfor
+                            </div>
+                        </fieldset>
+                        @error('rating')<p class="field-error">{{ $message }}</p>@enderror
+                        <label for="edit-review-comment" class="sr-only">ความคิดเห็น</label>
+                        <textarea id="edit-review-comment" name="comment" rows="3" maxlength="1000" placeholder="ความคิดเห็นเพิ่มเติม (ไม่บังคับ)" class="field mt-3">{{ old('review_form') === 'edit' ? old('comment') : $myReview->comment }}</textarea>
+                        @error('comment')<p class="field-error">{{ $message }}</p>@enderror
+                        <button class="btn btn-primary mt-4">บันทึกการแก้ไข</button>
+                    </form>
+                @endif
+            @elseif($activity->isEnded() && Auth::id() !== $activity->user_id && ! Auth::user()->isAdmin())
                 <p class="mt-4 flex items-center gap-2 rounded-tile bg-canvas p-3 text-sm text-ink-muted"><x-ui.icon name="alert" class="h-4 w-4" />{{ $reviewBlockReason }}</p>
             @endif
 
             @if($reviews->isNotEmpty())
                 <ul class="mt-5 divide-y divide-line">
                     @foreach($reviews as $review)
+                        @php $isMine = $review->user_id === Auth::id(); @endphp
                         <li class="py-4 first:pt-0 last:pb-0">
                             <div class="flex items-center justify-between gap-3">
                                 <div class="flex min-w-0 items-center gap-2.5">
                                     <x-ui.avatar :user="$review->user" size="sm" />
-                                    <p class="truncate text-sm font-medium text-ink" title="{{ $review->user->name }}">{{ $review->user->name }}</p>
+                                    <p class="truncate text-sm font-medium text-ink" title="{{ $review->user->name }}"><x-ui.user-link :user="$review->user">{{ $review->user->name }}</x-ui.user-link></p>
+                                    @if($isMine)<span class="chip chip-info h-6 shrink-0 px-2.5 text-xs">รีวิวของคุณ</span>@endif
                                 </div>
                                 <p class="flex shrink-0" role="img" aria-label="{{ $review->rating }} จาก 5 ดาว">@for($i = 1; $i <= 5; $i++)<x-ui.icon name="star" solid class="h-4 w-4 {{ $i <= $review->rating ? 'text-sun' : 'text-line-strong' }}" />@endfor</p>
                             </div>
                             @if($review->comment)<p class="break-anywhere mt-3 whitespace-pre-wrap text-sm leading-relaxed text-ink-soft">{{ $review->comment }}</p>@endif
-                            <p class="mt-2 text-xs text-ink-faint"><x-ui.time :value="$review->created_at" mode="date" /></p>
+                            <p class="mt-2 text-xs text-ink-faint">
+                                <x-ui.time :value="$review->created_at" mode="date" />
+                                @if($review->updated_at && $review->updated_at->gt($review->created_at)) · แก้ไขแล้ว @endif
+                            </p>
+
+                            @if($isMine)
+                                {{-- ปุ่มของเจ้าของรีวิว: Controller ตรวจซ้ำว่าเป็นรีวิวของผู้ใช้คนนี้ --}}
+                                <div class="mt-3 flex flex-wrap items-center gap-2">
+                                    @if(! $activity->isHidden())
+                                        <a href="#review-edit" class="btn btn-secondary btn-sm"><x-ui.icon name="pencil" class="h-4 w-4" /> แก้ไขรีวิว</a>
+                                    @endif
+                                    <form method="POST" action="{{ route('activities.reviews.destroy', [$activity, $review]) }}" onsubmit="return confirm('ยืนยันลบรีวิวของคุณ?')">
+                                        @csrf @method('DELETE')
+                                        <button class="btn btn-danger btn-sm">ลบรีวิว</button>
+                                    </form>
+                                </div>
+                            @elseif(Auth::user()->isAdmin())
+                                {{-- Admin ลบรีวิวที่ไม่เหมาะสม ต้องใส่เหตุผล (บันทึกในประวัติการดำเนินการ) --}}
+                                @php $adminFormOpen = (int) old('review_id') === $review->id; @endphp
+                                <details class="group mt-3" @if($adminFormOpen) open @endif>
+                                    <summary class="inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-bad transition hover:bg-bad-soft">
+                                        <x-ui.icon name="shield" class="h-3.5 w-3.5" /> ลบรีวิวนี้ (ผู้ดูแลระบบ)
+                                    </summary>
+                                    <form method="POST" action="{{ route('admin.reviews.destroy', $review) }}" class="mt-2 flex flex-col gap-2 sm:flex-row sm:items-start">
+                                        @csrf @method('DELETE')
+                                        <input type="hidden" name="review_id" value="{{ $review->id }}">
+                                        <div class="min-w-0 flex-1">
+                                            <label for="moderation-reason-{{ $review->id }}" class="sr-only">เหตุผลการลบรีวิว</label>
+                                            <input id="moderation-reason-{{ $review->id }}" name="moderation_reason" required minlength="3" maxlength="1000" value="{{ $adminFormOpen ? old('moderation_reason') : '' }}" placeholder="เหตุผลการลบ (บังคับ แจ้งผู้เขียนรีวิว)" class="field h-10 text-sm">
+                                            @if($adminFormOpen)
+                                                @error('moderation_reason')<p class="field-error">{{ $message }}</p>@enderror
+                                            @endif
+                                        </div>
+                                        <button class="btn btn-sm shrink-0 bg-bad text-white hover:brightness-110" onclick="return confirm('ยืนยันลบรีวิวนี้?')">ลบรีวิว</button>
+                                    </form>
+                                </details>
+                            @else
+                                {{-- รายงานรีวิวที่ไม่เหมาะสม ใช้ช่อง review_reason แยกจากฟอร์มรายงานด้านล่าง --}}
+                                @php $reportFormOpen = (int) old('report_review_id') === $review->id && $errors->has('review_reason'); @endphp
+                                <details class="group mt-3" @if($reportFormOpen) open @endif>
+                                    <summary class="inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-ink-muted transition hover:bg-bad-soft hover:text-bad">
+                                        <x-ui.icon name="flag" class="h-3.5 w-3.5" /> รายงาน
+                                    </summary>
+                                    <form method="POST" action="{{ route('activities.reviews.report', [$activity, $review]) }}" class="mt-2 space-y-2">
+                                        @csrf
+                                        <input type="hidden" name="report_review_id" value="{{ $review->id }}">
+                                        <label for="review-report-reason-{{ $review->id }}" class="sr-only">เหตุผลที่รายงานรีวิวนี้</label>
+                                        <textarea id="review-report-reason-{{ $review->id }}" name="review_reason" rows="2" minlength="5" maxlength="1000" required placeholder="รีวิวนี้ไม่เหมาะสมอย่างไร เช่น ใช้คำหยาบ หรือให้ข้อมูลเท็จ" class="field text-sm @if($reportFormOpen) field-invalid @endif" @if($reportFormOpen) aria-invalid="true" aria-describedby="review-report-error-{{ $review->id }}" @endif>{{ $reportFormOpen ? old('review_reason') : '' }}</textarea>
+                                        @if($reportFormOpen)
+                                            @error('review_reason')<p id="review-report-error-{{ $review->id }}" class="field-error">{{ $message }}</p>@enderror
+                                        @endif
+                                        <button class="btn btn-danger btn-sm">ส่งรายงานรีวิว</button>
+                                    </form>
+                                </details>
+                            @endif
                         </li>
                     @endforeach
                 </ul>
             @else
-                <p class="mt-5 rounded-tile bg-canvas p-4 text-center text-sm text-ink-muted">{{ $activity->isEnded() ? 'ยังไม่มีรีวิว' : 'รีวิวได้หลังกิจกรรมจบ' }}</p>
+                <p class="mt-5 rounded-tile bg-canvas p-4 text-center text-sm text-ink-muted">{{ $activity->status === 'cancelled' ? 'กิจกรรมนี้ถูกยกเลิก จึงไม่มีรีวิว' : ($activity->isEnded() ? 'ยังไม่มีรีวิว' : 'รีวิวได้หลังกิจกรรมจบ') }}</p>
             @endif
         </section>
 
-        {{-- ส่วนที่ 5: รายงานกิจกรรมหรือผู้ใช้ (ไม่แสดงให้เจ้าของกิจกรรม) --}}
-        @if(Auth::id() !== $activity->user_id)
+        {{-- ส่วนที่ 5: รายงานกิจกรรมหรือผู้ใช้ (ไม่แสดงให้เจ้าของกิจกรรม และ Admin ที่จัดการได้โดยตรงอยู่แล้ว) --}}
+        @if(Auth::id() !== $activity->user_id && ! Auth::user()->isAdmin())
             <details class="group mt-5" @if($errors->has('reason') || $errors->has('target')) open @endif>
                 <summary class="inline-flex cursor-pointer items-center gap-2 rounded-full px-3 py-2 text-sm font-medium text-bad transition hover:bg-bad-soft">
                     <x-ui.icon name="flag" class="h-4 w-4" /> รายงานปัญหา

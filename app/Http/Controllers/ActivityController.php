@@ -135,9 +135,13 @@ class ActivityController extends Controller
 
         // ส่วนที่ 5: รีวิวและการรายงาน
         $reviews = $activity->reviews()->with('user')->latest()->get();
+        // รีวิวของฉันขึ้นบนสุด ตามด้วยรีวิวอื่นจากใหม่ไปเก่า
+        [$mine, $others] = $reviews->partition(fn ($review) => $review->user_id === $request->user()->id);
+        $reviews = $mine->concat($others)->values();
+        $myReview = $mine->first();
         $reviewBlockReason = $activity->reviewBlockReason($request->user());
 
-        return view('activities.show', compact('activity', 'myParticipation', 'approvedMembers', 'pendingCount', 'reviews', 'reviewBlockReason'));
+        return view('activities.show', compact('activity', 'myParticipation', 'approvedMembers', 'pendingCount', 'reviews', 'myReview', 'reviewBlockReason'));
     }
 
     public function edit(Activity $activity): View
@@ -168,7 +172,12 @@ class ActivityController extends Controller
             }
             $activity->location_image_path = $imagePath;
         }
+        // เปลี่ยนวันเวลาหรือสถานที่ ต้องบอกคนที่จะมาร่วม (ตรวจก่อน save เพราะหลัง save isDirty จะเป็น false)
+        $scheduleChanged = $activity->isDirty(['starts_at', 'ends_at', 'location']);
         $activity->save();
+        if ($scheduleChanged) {
+            $activity->notifyParticipants("กิจกรรม '{$activity->title}' มีการเปลี่ยนวันเวลาหรือสถานที่ กรุณาตรวจสอบรายละเอียดอีกครั้ง");
+        }
         if ($oldImage && $oldImage !== $activity->location_image_path) {
             Storage::disk('public')->delete($oldImage);
         }
@@ -205,6 +214,7 @@ class ActivityController extends Controller
         // เก็บโพสต์ไว้เป็นประวัติ โดยเปลี่ยนสถานะแทนการลบข้อมูลกิจกรรม
         $activity->status = 'cancelled';
         $activity->save();
+        $activity->notifyParticipants("กิจกรรม '{$activity->title}' ถูกยกเลิกโดยผู้จัด", 'danger');
 
         return redirect()->route('activities.show', $activity)->with('success', 'ยกเลิกกิจกรรมเรียบร้อยแล้ว');
     }

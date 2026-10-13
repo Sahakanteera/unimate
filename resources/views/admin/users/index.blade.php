@@ -78,7 +78,7 @@
                             <div class="flex items-center gap-3">
                                 <x-ui.avatar :user="$u" />
                                 <div class="min-w-0">
-                                    <div class="break-anywhere font-medium text-ink">{{ $u->name }}</div>
+                                    <div class="break-anywhere font-medium text-ink"><a href="{{ route('users.show', $u) }}" class="hover:underline underline-offset-4">{{ $u->name }}</a></div>
                                     <div class="truncate text-xs text-ink-muted">{{ $u->email }}</div>
                                     @if($u->bio)
                                         <div class="mt-0.5 max-w-xs truncate text-xs italic text-ink-faint" title="{{ $u->bio }}">"{{ $u->bio }}"</div>

@@ -77,4 +77,14 @@ class User extends Authenticatable
     {
         return $this->hasMany(ActivityParticipant::class);
     }
+
+    /**
+     * รีวิวกิจกรรมที่ผู้ใช้คนนี้เขียน
+     *
+     * @return HasMany<Review, $this>
+     */
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
 }

@@ -109,7 +109,7 @@
                                     @endif
                                 </div>
                                 <h3 class="break-anywhere mt-2 text-[1.0625rem] font-medium leading-snug text-ink"><a href="{{ route('activities.show', $act) }}" class="hover:underline">{{ $act->title }}</a></h3>
-                                <p class="mt-1 flex items-center gap-1.5 text-sm text-ink-muted"><x-ui.avatar :user="$act->user" size="xs" /> โดย {{ $act->user->name }} · {{ $act->starts_at->copy()->locale('th')->isoFormat('dd D MMM') }} {{ $act->starts_at->format('H:i') }}</p>
+                                <p class="mt-1 flex items-center gap-1.5 text-sm text-ink-muted"><x-ui.avatar :user="$act->user" size="xs" /> โดย <x-ui.user-link :user="$act->user" class="break-anywhere min-w-0">{{ $act->user->name }}</x-ui.user-link> · {{ $act->starts_at->copy()->locale('th')->isoFormat('dd D MMM') }} {{ $act->starts_at->format('H:i') }}</p>
                             </div>
                         </div>
 
@@ -122,6 +122,13 @@
                                         {{ $participation->isApproved() ? 'ถอนตัว' : 'ถอนคำขอ' }}
                                     </button>
                                 </form>
+                            </div>
+                        @endif
+
+                        {{-- มาเข้าร่วมจริง กิจกรรมจบแล้ว และยังไม่รีวิว: ชวนให้คะแนน (เงื่อนไขเดียวกับ Activity::reviewBlockReason) --}}
+                        @if($participation->isApproved() && $participation->attendance === 'present' && $act->isEnded() && ! $act->isHidden() && ! in_array($act->id, $reviewedActivityIds))
+                            <div class="mt-5 flex justify-end border-t border-line pt-4">
+                                <a href="{{ route('activities.show', $act) }}#reviews" class="btn btn-primary btn-sm"><x-ui.icon name="star" solid class="h-4 w-4 text-sun" /> ให้คะแนน</a>
                             </div>
                         @endif
                     </article>

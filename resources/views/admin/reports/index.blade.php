@@ -24,22 +24,30 @@
 
     <section class="space-y-4">
         @forelse($reports as $report)
-            @php $target = $report->target(); @endphp
+            @php
+                $target = $report->target();
+                $isReview = $report->target_type === 'review';
+                $iconTint = ['activity' => 'bg-tint-butter', 'review' => 'bg-tint-mint'][$report->target_type] ?? 'bg-tint-lilac';
+                $iconName = ['activity' => 'calendar', 'review' => 'star'][$report->target_type] ?? 'user';
+            @endphp
             <article class="card p-5 sm:p-6">
                 <div class="flex flex-wrap items-start justify-between gap-3">
                     <div class="flex min-w-0 items-start gap-3">
-                        <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full {{ $report->target_type === 'activity' ? 'bg-tint-butter' : 'bg-tint-lilac' }}"><x-ui.icon :name="$report->target_type === 'activity' ? 'calendar' : 'user'" /></span>
+                        <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full {{ $iconTint }}"><x-ui.icon :name="$iconName" /></span>
                         <div class="min-w-0">
-                            <p class="text-xs text-ink-muted">#{{ $report->id }} · <x-ui.time :value="$report->created_at" /> · รายงานโดย {{ $report->reporter->name }}</p>
+                            <p class="text-xs text-ink-muted">#{{ $report->id }} · <x-ui.time :value="$report->created_at" /> · รายงานโดย <a href="{{ route('users.show', $report->reporter) }}" class="hover:underline underline-offset-4">{{ $report->reporter->name }}</a></p>
                             <p class="mt-1 break-words font-medium text-ink">
-                                {{ $report->target_type === 'activity' ? 'กิจกรรม' : 'ผู้ใช้' }}:
+                                {{ $report->targetLabel() }}:
                                 @if($target === null)
-                                    <span class="text-ink-faint">(ถูกลบแล้ว)</span>
+                                    <span class="text-ink-faint">{{ $isReview ? 'รีวิวถูกลบแล้ว' : '(ถูกลบแล้ว)' }}</span>
+                                @elseif($target instanceof \App\Models\Review)
+                                    ของ <x-ui.user-link :user="$target->user" class="link">{{ $target->user->name }}</x-ui.user-link>
+                                    <span class="text-sm font-normal text-ink-muted">ในกิจกรรม</span> <a href="{{ route('activities.show', $target->activity) }}#reviews" class="link">{{ $target->activity->title }}</a>
                                 @elseif($target instanceof \App\Models\Activity)
                                     <a href="{{ route('activities.show', $target) }}" class="link">{{ $target->title }}</a>
                                     @if($target->isHidden())<span class="chip chip-dark ml-1 h-6 px-2.5 text-xs">ซ่อนอยู่</span>@endif
                                 @else
-                                    {{ $target->name }} <span class="text-sm font-normal text-ink-muted">({{ $target->email }})</span>
+                                    <a href="{{ route('users.show', $target) }}" class="link">{{ $target->name }}</a> <span class="text-sm font-normal text-ink-muted">({{ $target->email }})</span>
                                     @if($target->isSuspended())<span class="chip chip-bad ml-1 h-6 px-2.5 text-xs">ถูกระงับ</span>@endif
                                 @endif
                             </p>
@@ -47,6 +55,13 @@
                     </div>
                     <span class="chip {{ $statusStyles[$report->status] ?? '' }}">{{ $tabs[$report->status] ?? $report->status }}</span>
                 </div>
+                @if($target instanceof \App\Models\Review)
+                    {{-- เนื้อหารีวิวที่ถูกรายงาน ให้ Admin ตัดสินใจได้โดยไม่ต้องเปิดหน้ากิจกรรม --}}
+                    <div class="mt-4 rounded-tile border border-line p-4">
+                        <p class="flex" role="img" aria-label="{{ $target->rating }} จาก 5 ดาว">@for($i = 1; $i <= 5; $i++)<x-ui.icon name="star" solid class="h-4 w-4 {{ $i <= $target->rating ? 'text-sun' : 'text-line-strong' }}" />@endfor</p>
+                        <p class="break-anywhere mt-2 whitespace-pre-wrap text-sm leading-relaxed text-ink-soft">{{ $target->comment ?: '(ไม่มีความคิดเห็น ให้คะแนนอย่างเดียว)' }}</p>
+                    </div>
+                @endif
                 <p class="break-anywhere mt-4 whitespace-pre-wrap rounded-tile bg-canvas p-4 text-sm leading-relaxed text-ink-soft"><span class="text-ink-muted">เหตุผลที่รายงาน:</span> {{ $report->reason }}</p>
 
                 @if($report->isPending())
@@ -55,10 +70,17 @@
                         <label for="note-{{ $report->id }}" class="sr-only">บันทึกเหตุผลการดำเนินการ</label>
                         <input id="note-{{ $report->id }}" name="note" required minlength="3" maxlength="1000" placeholder="บันทึกเหตุผลการดำเนินการ (บังคับ)" class="field">
                         <div class="flex flex-wrap gap-2">
-                            <button name="action" value="hide" class="btn btn-sm bg-bad text-white hover:brightness-110" onclick="return confirm('ยืนยันดำเนินการ?')">
-                                <x-ui.icon :name="$report->target_type === 'activity' ? 'eye-slash' : 'ban'" class="h-4 w-4" />
-                                {{ $report->target_type === 'activity' ? 'ซ่อนกิจกรรม' : 'ระงับบัญชีผู้ใช้' }}
-                            </button>
+                            {{-- เนื้อหาที่ถูกลบไปแล้ว (เช่น Admin ลบรีวิวจากหน้ากิจกรรม) เหลือแค่ปุ่มยกรายงาน --}}
+                            @if($target !== null)
+                                @php
+                                    $hideLabel = ['activity' => 'ซ่อนกิจกรรม', 'review' => 'ลบรีวิว'][$report->target_type] ?? 'ระงับบัญชีผู้ใช้';
+                                    $hideIcon = ['activity' => 'eye-slash', 'review' => 'trash'][$report->target_type] ?? 'ban';
+                                @endphp
+                                <button name="action" value="hide" class="btn btn-sm bg-bad text-white hover:brightness-110" onclick="return confirm('ยืนยัน{{ $hideLabel }}?')">
+                                    <x-ui.icon :name="$hideIcon" class="h-4 w-4" />
+                                    {{ $hideLabel }}
+                                </button>
+                            @endif
                             <button name="action" value="dismiss" class="btn btn-secondary btn-sm">ยกรายงาน (ไม่พบความผิด)</button>
                         </div>
                     </form>

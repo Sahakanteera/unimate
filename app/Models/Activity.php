@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Notifications\ActivityNotification;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -57,6 +58,12 @@ class Activity extends Model
         if ($user->id === $this->user_id) {
             return 'ผู้จัดไม่สามารถรีวิวกิจกรรมของตัวเองได้';
         }
+        if ($this->status === 'cancelled') {
+            return 'กิจกรรมนี้ถูกยกเลิก จึงรีวิวไม่ได้';
+        }
+        if ($this->isHidden()) {
+            return 'กิจกรรมนี้ถูกซ่อนโดยผู้ดูแลระบบ จึงรีวิวไม่ได้';
+        }
         if (! $this->isEnded()) {
             return 'รีวิวได้หลังกิจกรรมจบแล้วเท่านั้น';
         }
@@ -73,6 +80,17 @@ class Activity extends Model
         }
 
         return null;
+    }
+
+    /** แจ้งเตือนผู้ที่ยังมีคำขอค้างอยู่หรือได้รับอนุมัติแล้ว เช่น เมื่อกิจกรรมถูกยกเลิกหรือเปลี่ยนเวลา */
+    public function notifyParticipants(string $message, string $kind = 'warning'): void
+    {
+        $url = route('activities.show', $this, false);
+        $this->participants()
+            ->whereIn('status', ['pending', 'approved'])
+            ->with('user')
+            ->get()
+            ->each(fn (ActivityParticipant $p) => $p->user->notify(new ActivityNotification($message, $url, $kind)));
     }
 
     /** @return BelongsTo<User, $this> */

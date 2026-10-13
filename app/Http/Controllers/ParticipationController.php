@@ -52,6 +52,13 @@ class ParticipationController extends Controller
         $participant->status = 'pending';
         $participant->save();
 
+        // แจ้งผู้จัดว่ามีคำขอใหม่ กดแล้วไปหน้าจัดการคำขอ
+        $activity->user->notify(new ActivityNotification(
+            "{$request->user()->name} ขอเข้าร่วมกิจกรรม '{$activity->title}'",
+            route('activities.requests', $activity, false),
+            'request'
+        ));
+
         return back()->with('success', 'ส่งคำขอเข้าร่วมกิจกรรมเรียบร้อยแล้ว รอผู้จัดอนุมัติ');
     }
 
@@ -71,6 +78,15 @@ class ParticipationController extends Controller
         $wasApproved = $participant->isApproved();
         $participant->status = 'cancelled';
         $participant->save();
+
+        // แจ้งผู้จัดเมื่อมีคนถอนตัวหรือถอนคำขอ
+        $activity->user->notify(new ActivityNotification(
+            $wasApproved
+                ? "{$request->user()->name} ถอนตัวจากกิจกรรม '{$activity->title}'"
+                : "{$request->user()->name} ถอนคำขอเข้าร่วมกิจกรรม '{$activity->title}'",
+            route('activities.requests', ['activity' => $activity, 'status' => $wasApproved ? 'approved' : 'pending'], false),
+            'warning'
+        ));
 
         $message = $wasApproved
             ? 'ถอนตัวจากกิจกรรมเรียบร้อยแล้ว'
@@ -145,7 +161,11 @@ class ParticipationController extends Controller
         }
 
         // ส่งการแจ้งเตือนว่าได้รับอนุมัติ
-        $participant->user->notify(new ActivityNotification("คำขอเข้าร่วมกิจกรรม '{$activity->title}' ของคุณได้รับการอนุมัติแล้ว!"));
+        $participant->user->notify(new ActivityNotification(
+            "คำขอเข้าร่วมกิจกรรม '{$activity->title}' ของคุณได้รับการอนุมัติแล้ว!",
+            route('activities.show', $activity, false),
+            'success'
+        ));
 
         return back()->with('success', 'อนุมัติคำขอของ '.$participant->user->name.' เรียบร้อยแล้ว');
     }
@@ -167,7 +187,11 @@ class ParticipationController extends Controller
         $participant->save();
 
         // ส่งการแจ้งเตือนว่าถูกปฏิเสธ
-        $participant->user->notify(new ActivityNotification("คำขอเข้าร่วมกิจกรรม '{$activity->title}' ของคุณไม่ได้รับการอนุมัติ"));
+        $participant->user->notify(new ActivityNotification(
+            "คำขอเข้าร่วมกิจกรรม '{$activity->title}' ของคุณไม่ได้รับการอนุมัติ",
+            route('activities.show', $activity, false),
+            'danger'
+        ));
 
         return back()->with('success', 'ปฏิเสธคำขอของ '.$participant->user->name.' เรียบร้อยแล้ว');
     }

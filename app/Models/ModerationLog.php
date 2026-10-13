@@ -14,6 +14,7 @@ class ModerationLog extends Model
         'unhide_activity' => 'เลิกซ่อนกิจกรรม',
         'suspend_user' => 'ระงับบัญชีผู้ใช้',
         'dismiss' => 'ยกรายงาน (ไม่ดำเนินการ)',
+        'delete_review' => 'ลบรีวิว',
     ];
 
     /** @return BelongsTo<User, $this> */
@@ -29,6 +30,14 @@ class ModerationLog extends Model
 
     public function targetLabel(): string
     {
+        if ($this->target_type === 'review') {
+            // รีวิวที่ถูกลบเหลือแค่หมายเลขอ้างอิง (กรณียกรายงาน รีวิวยังอยู่)
+            $review = Review::with('user')->find($this->target_id);
+
+            return $review === null
+                ? 'รีวิว #'.$this->target_id.' (ลบแล้ว)'
+                : 'รีวิวของ '.$review->user->name;
+        }
         if ($this->target_type === 'activity') {
             $name = Activity::find($this->target_id)?->title;
             $prefix = 'กิจกรรม';

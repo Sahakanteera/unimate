@@ -32,6 +32,9 @@ class MyActivityController extends Controller
             ->latest()
             ->get();
 
-        return view('my-activities.index', compact('myActivities', 'myParticipations'));
+        // กิจกรรมที่ฉันรีวิวแล้ว ใช้ซ่อนปุ่ม "ให้คะแนน" โดยไม่ต้อง query ทีละการ์ด
+        $reviewedActivityIds = $user->reviews()->pluck('activity_id')->all();
+
+        return view('my-activities.index', compact('myActivities', 'myParticipations', 'reviewedActivityIds'));
     }
 }
