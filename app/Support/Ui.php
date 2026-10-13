@@ -46,10 +46,12 @@ class Ui
      */
     public static function activityState(Activity $activity, int $approvedCount): string
     {
+        $now = now();
+
         return match (true) {
             $activity->status === 'cancelled' => 'cancelled',
-            $activity->isEnded() => 'ended',
-            Carbon::parse($activity->starts_at)->isPast() => 'ongoing',
+            Carbon::parse($activity->ends_at)->lessThanOrEqualTo($now) => 'ended',
+            Carbon::parse($activity->starts_at)->lessThanOrEqualTo($now) => 'ongoing',
             $approvedCount >= $activity->capacity => 'full',
             default => 'open',
         };

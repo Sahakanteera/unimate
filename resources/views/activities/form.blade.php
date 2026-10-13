@@ -62,8 +62,9 @@
                     @error('location_image')<p id="location_image-error" class="field-error">{{ $message }}</p>@enderror
                     <img id="location-image-preview" @if($activity->location_image_path) src="{{ asset('storage/'.$activity->location_image_path) }}" @else hidden @endif alt="ตัวอย่างรูปสถานที่" class="mt-3 max-h-64 w-full rounded-tile object-contain">
                     @if($activity->location_image_path)
-                        <label class="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" name="remove_location_image" value="1" @checked(old('remove_location_image'))> ลบรูปสถานที่เดิม</label>
+                        <button id="delete-location-image" type="button" data-delete-url="{{ route('activities.location-image.destroy', $activity) }}" class="btn btn-danger btn-sm mt-3"><x-ui.icon name="trash" class="h-4 w-4" /> ลบรูปสถานที่</button>
                     @endif
+                    <p id="location-image-action-status" class="mt-2 text-sm text-ok" role="status" aria-live="polite" hidden></p>
                 </div>
                 <div>
                     <label for="google_maps_url" class="field-label">ลิงก์สถานที่ใน Google Maps (ไม่บังคับ)</label>
@@ -71,11 +72,18 @@
                     <p class="mt-2 text-sm text-ink-muted">เปิดสถานที่ใน Google Maps → กดแชร์ → คัดลอกลิงก์ → วางที่นี่ เพื่อให้ผู้เข้าร่วมเปิดดูจุดนัดพบได้</p>
                     @error('google_maps_url')<p id="google_maps_url-error" class="field-error">{{ $message }}</p>@enderror
                 </div>
-                <div class="grid gap-5 sm:grid-cols-2">
-                    @include('activities.partials.datetime-field', ['field' => 'starts_at', 'label' => 'เวลาเริ่ม', 'default' => $defaultStart])
-                    @include('activities.partials.datetime-field', ['field' => 'ends_at', 'label' => 'เวลาสิ้นสุด', 'default' => $defaultEnd])
+                <div class="rounded-tile border border-line bg-canvas/50 p-4 sm:p-5">
+                    <div class="mb-4 flex items-center justify-between gap-2">
+                        <h3 class="flex items-center gap-2 text-sm font-medium text-ink"><x-ui.icon name="calendar" class="h-4 w-4" /> วันและเวลานัดหมาย</h3>
+                        <span class="chip text-xs">เวลาไทย · 24 ชม.</span>
+                    </div>
+                    <div class="grid gap-5 sm:grid-cols-2">
+                        @include('activities.partials.datetime-field', ['field' => 'starts_at', 'label' => 'เวลาเริ่ม', 'default' => $defaultStart])
+                        @include('activities.partials.datetime-field', ['field' => 'ends_at', 'label' => 'เวลาสิ้นสุด', 'default' => $defaultEnd])
+                    </div>
+                    <p data-activity-duration hidden class="mt-4 border-t border-line pt-3 text-sm font-medium text-ink-soft" role="status" aria-live="polite"></p>
                 </div>
-                <p class="flex items-start gap-2 text-sm text-ink-muted"><x-ui.icon name="clock" class="mt-0.5 h-4 w-4" /> เวลาไทย (Asia/Bangkok) แบบ 24 ชั่วโมง · เวลาเริ่มต้องอยู่ในอนาคต และเวลาสิ้นสุดต้องอยู่หลังเวลาเริ่ม</p>
+                <p class="text-xs text-ink-muted">วันที่ใช้รูปแบบวัน/เดือน/ปี (ค.ศ.) · เวลาเริ่มต้องอยู่ในอนาคต</p>
             </section>
 
             <section class="space-y-5 border-t border-line pt-8">
@@ -108,8 +116,16 @@
         </aside>
     </div>
 </div>
+@if($activity->location_image_path)
+    @include('activities.partials.delete-photo-dialog')
+@endif
 @endsection
 
 @section('scripts')
+    @include('activities.partials.calendar-scripts')
     <script src="{{ asset('js/activity-photo.js') }}" defer></script>
+@endsection
+
+@section('styles')
+    @include('activities.partials.calendar-styles')
 @endsection

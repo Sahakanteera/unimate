@@ -31,9 +31,9 @@
                         </div>
                         <button class="btn btn-secondary h-12">บันทึกชื่อ</button>
                     </form>
-                    <form method="POST" action="{{ route('admin.categories.destroy', $category) }}" onsubmit="return confirm('ยืนยันลบหมวดหมู่?')">
+                    <form method="POST" action="{{ route('admin.categories.destroy', $category) }}" data-delete-category="{{ $category->name }}">
                         @csrf @method('DELETE')
-                        <button @disabled($category->activities_count > 0) class="btn btn-ghost h-12 text-bad hover:bg-bad-soft hover:text-bad disabled:text-ink-faint" title="{{ $category->activities_count > 0 ? 'ลบไม่ได้เพราะมีกิจกรรมใช้งานอยู่' : 'ลบหมวดหมู่' }}">
+                        <button type="submit" @disabled($category->activities_count > 0) class="btn btn-danger h-12 disabled:text-ink-faint" title="{{ $category->activities_count > 0 ? 'ลบไม่ได้เพราะมีกิจกรรมใช้งานอยู่' : 'ลบหมวดหมู่' }}">
                             <x-ui.icon name="trash" class="h-4 w-4" /> ลบหมวดหมู่
                         </button>
                     </form>
@@ -44,4 +44,9 @@
         </ul>
     </div>
 </div>
+@include('admin.categories.partials.delete-dialog')
+@endsection
+
+@section('scripts')
+    <script src="{{ asset('js/category-delete.js') }}" defer></script>
 @endsection

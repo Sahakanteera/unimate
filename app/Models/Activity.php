@@ -40,7 +40,7 @@ class Activity extends Model
     public function isEnded(): bool
     {
         // ใช้ Carbon::parse แบบเดียวกับ ActivityPolicy เพราะ PHPStan อ่านชนิดคอลัมน์จาก migration เป็น string
-        return Carbon::parse($this->ends_at)->isPast();
+        return Carbon::parse($this->ends_at)->lessThanOrEqualTo(now());
     }
 
     public function isHidden(): bool

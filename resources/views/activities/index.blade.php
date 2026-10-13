@@ -9,7 +9,7 @@
         ["หาเพื่อน\nไปปลูกป่าชายเลน", 'bg-tint-mint', 'right-8 top-12 rotate-6'],
         ["แจมดนตรีเย็นนี้\nใครเล่นกีตาร์ได้?", 'bg-tint-lilac', 'right-20 bottom-8 -rotate-3'],
     ];
-    $advancedOpen = request()->filled('location') || request()->filled('date') || request('status', 'available') !== 'available';
+    $advancedOpen = request()->filled('location') || request()->filled('date') || request()->filled('time_from') || request()->filled('time_to') || request('status', 'available') !== 'available';
     $hasFilters = $advancedOpen || request()->filled('q') || request()->filled('category_id');
     // ระหว่างค้นหาหรือเปิดหน้าถัดไป ย่อส่วนหัวลง ให้ผลลัพธ์ขึ้นมาใกล้ขอบบน
     $compact = $hasFilters || $activities->currentPage() > 1;
@@ -17,6 +17,7 @@
 @endphp
 
 @section('styles')
+@include('activities.partials.calendar-styles')
 @unless($compact)
 <link href="https://fonts.googleapis.com/css2?family=Playpen+Sans+Thai:wght@500&text={{ urlencode(implode('', array_column($notes, 0))) }}&display=swap" rel="stylesheet">
 @endunless
@@ -53,7 +54,7 @@
             <details class="group mt-4 text-left" @if($advancedOpen) open @endif>
                 <summary class="mx-auto flex w-fit cursor-pointer items-center gap-2 rounded-full px-3 py-1.5 text-sm text-ink-muted transition hover:bg-white/70 hover:text-ink">
                     <x-ui.icon name="filters" class="h-4 w-4" />
-                    ตัวกรองเพิ่มเติม (สถานที่ · วันที่ · สถานะ)
+                    ตัวกรองเพิ่มเติม (สถานที่ · วันที่ · เวลา · สถานะ)
                     <x-ui.icon name="chevron-down" class="h-4 w-4 transition group-open:rotate-180" />
                 </summary>
                 <div class="card mt-3 grid gap-4 rounded-2xl p-4 sm:grid-cols-3">
@@ -63,15 +64,26 @@
                     </div>
                     <div>
                         <label for="date" class="field-label">วันที่เริ่มกิจกรรม</label>
-                        <input id="date" type="date" name="date" value="{{ request('date') }}" class="field">
+                        <x-ui.date-input id="date" name="date" :value="request('date')" />
                     </div>
                     <div>
                         <label for="status" class="field-label">สถานะ</label>
                         <select id="status" name="status" class="field">
-                            <option value="available" @selected(request('status', 'available') === 'available')>ยังว่างอยู่</option>
+                            <option value="available" @selected(request('status', 'available') === 'available')>เปิดรับ</option>
                             <option value="full" @selected(request('status') === 'full')>เต็มแล้ว</option>
+                            <option value="ongoing" @selected(request('status') === 'ongoing')>กำลังดำเนินการ</option>
+                            <option value="ended" @selected(request('status') === 'ended')>จบแล้ว</option>
+                            <option value="cancelled" @selected(request('status') === 'cancelled')>ยกเลิกแล้ว</option>
                             <option value="all" @selected(request('status') === 'all')>ทั้งหมด</option>
                         </select>
+                    </div>
+                    <div>
+                        <label for="time_from" class="field-label">เวลาเริ่ม (เวลาไทย)</label>
+                        <x-ui.time-input id="time_from" name="time_from" :value="request('time_from')" label="เวลาเริ่ม" />
+                    </div>
+                    <div>
+                        <label for="time_to" class="field-label">เวลาสิ้นสุด (เวลาไทย)</label>
+                        <x-ui.time-input id="time_to" name="time_to" :value="request('time_to')" label="เวลาสิ้นสุด" />
                     </div>
                     <div class="flex justify-end gap-2 sm:col-span-3">
                         <a href="{{ route('activities.index') }}" class="btn btn-ghost btn-sm">ล้างตัวกรอง</a>
@@ -122,4 +134,8 @@
 
     <div class="mt-8">{{ $activities->links('partials.pagination') }}</div>
 </section>
+@endsection
+
+@section('scripts')
+    @include('activities.partials.calendar-scripts')
 @endsection

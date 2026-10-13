@@ -5,9 +5,13 @@ namespace App\Http\Controllers;
 use App\Http\Requests\SaveActivityRequest;
 use App\Models\Activity;
 use App\Models\Category;
+use App\Support\ActivityDate;
+use App\Support\ActivityTime;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 
@@ -15,12 +19,19 @@ class ActivityController extends Controller
 {
     public function index(Request $request): View
     {
+        ActivityTime::normalize($request, 'time_from');
+        ActivityTime::normalize($request, 'time_to');
+        if ($request->has('date')) {
+            $request->merge(['date' => ActivityDate::toIso($request->input('date'))]);
+        }
         $filters = $request->validate([
             'q' => ['nullable', 'string', 'max:200'],
             'location' => ['nullable', 'string', 'max:255'],
             'category_id' => ['nullable', 'integer', 'exists:categories,id'],
             'date' => ['nullable', 'date_format:Y-m-d'],
-            'status' => ['nullable', 'in:available,full,all'],
+            'time_from' => ['nullable', 'date_format:H:i'],
+            'time_to' => ['nullable', 'date_format:H:i'],
+            'status' => ['nullable', 'in:available,full,ongoing,ended,cancelled,all'],
         ]);
         $now = now();
         // ดึงเจ้าของและหมวดหมู่ล่วงหน้า ลด query ซ้ำเมื่อแสดงการ์ดกิจกรรมแต่ละใบ
@@ -34,11 +45,18 @@ class ActivityController extends Controller
             ->orderByRaw('CASE WHEN ends_at < ? THEN starts_at END DESC', [$now])
             ->orderBy('id');
         $status = $filters['status'] ?? 'available';
-        if ($status !== 'all') {
+        if (in_array($status, ['available', 'full'], true)) {
             // เฉพาะกิจกรรมที่ยังรับคำขอได้ นับเฉพาะผู้ที่อนุมัติแล้ว ไม่รวมคำขอรออนุมัติ
             $query->where('status', 'published')->where('starts_at', '>', $now);
             $approvedCount = "SELECT COUNT(*) FROM activity_participants WHERE activity_participants.activity_id = activities.id AND activity_participants.status = 'approved'";
             $query->whereRaw('('.$approvedCount.') '.($status === 'full' ? '>=' : '<').' activities.capacity');
+        } elseif ($status === 'ongoing') {
+            $query->where('status', 'published')->where('starts_at', '<=', $now)->where('ends_at', '>', $now);
+        } elseif ($status === 'ended') {
+            $query->where('status', 'published')->where('ends_at', '<=', $now);
+        } elseif ($status === 'cancelled') {
+            // เก็บกิจกรรมที่ยกเลิกไว้ให้ค้นหาได้ตลอด ไม่มีเงื่อนไขจำกัด 24 ชั่วโมง
+            $query->where('status', 'cancelled');
         }
         if (! empty($filters['q'])) {
             // ครอบ OR ด้วยวงเล็บ เพื่อให้ทั้งชื่อและรายละเอียดอยู่ภายใต้ตัวกรองอื่นด้วย
@@ -56,6 +74,20 @@ class ActivityController extends Controller
         if (! empty($filters['date'])) {
             $query->whereDate('starts_at', $filters['date']);
         }
+        $from = ! empty($filters['time_from']) ? $filters['time_from'].':00' : null;
+        $to = ! empty($filters['time_to']) ? $filters['time_to'].':00' : null;
+        if ($from && $to && $from > $to) {
+            $query->where(function ($query) use ($from, $to) {
+                $query->whereTime('starts_at', '>=', $from)->orWhereTime('starts_at', '<=', $to);
+            });
+        } else {
+            if ($from) {
+                $query->whereTime('starts_at', '>=', $from);
+            }
+            if ($to) {
+                $query->whereTime('starts_at', '<=', $to);
+            }
+        }
 
         // เก็บตัวกรองไว้ใน URL เมื่อผู้ใช้เปลี่ยนหน้าผลการค้นหา
         return view('activities.index', ['activities' => $query->paginate(12)->withQueryString(), 'categories' => Category::orderBy('name')->get()]);
@@ -68,7 +100,7 @@ class ActivityController extends Controller
 
     public function store(SaveActivityRequest $request): RedirectResponse
     {
-        $activity = new Activity($request->safe()->except(['location_image', 'remove_location_image', 'starts_at_date', 'starts_at_time', 'ends_at_date', 'ends_at_time']));
+        $activity = new Activity($request->safe()->only(['category_id', 'title', 'description', 'location', 'google_maps_url', 'starts_at', 'ends_at', 'capacity']));
         if ($request->hasFile('location_image')) {
             $activity->location_image_path = $request->file('location_image')->store('activity-locations', 'public');
         }
@@ -117,8 +149,9 @@ class ActivityController extends Controller
     {
         // SaveActivityRequest ตรวจสิทธิ์เจ้าของก่อนเข้าเมธอดนี้ ทั้งคำขอ PUT และ PATCH
         abort_if($activity->status === 'cancelled', 409, 'กิจกรรมนี้ถูกยกเลิกแล้ว');
+        abort_if($activity->isEnded(), 409, 'กิจกรรมนี้จบแล้ว ไม่สามารถแก้ไขรายละเอียดได้');
         $oldImage = $activity->location_image_path;
-        $activity->fill($request->safe()->except(['location_image', 'remove_location_image', 'starts_at_date', 'starts_at_time', 'ends_at_date', 'ends_at_time']));
+        $activity->fill($request->safe()->only(['category_id', 'title', 'description', 'location', 'google_maps_url', 'starts_at', 'ends_at', 'capacity']));
         if ($request->has('google_maps_url')) {
             // เมื่อเจ้าของเปลี่ยนหรือล้างลิงก์ ให้เลิกใช้หมุดเดิมของโพสต์ด้วย
             $activity->latitude = null;
@@ -126,8 +159,6 @@ class ActivityController extends Controller
         }
         if ($request->hasFile('location_image')) {
             $activity->location_image_path = $request->file('location_image')->store('activity-locations', 'public');
-        } elseif ($request->boolean('remove_location_image')) {
-            $activity->location_image_path = null;
         }
         $activity->save();
         if ($oldImage && $oldImage !== $activity->location_image_path) {
@@ -135,6 +166,29 @@ class ActivityController extends Controller
         }
 
         return redirect()->route('activities.show', $activity)->with('success', 'แก้ไขกิจกรรมเรียบร้อยแล้ว');
+    }
+
+    public function deleteLocationImage(Activity $activity): JsonResponse
+    {
+        Gate::authorize('update', $activity);
+        $deleted = DB::transaction(function () use ($activity) {
+            $current = Activity::query()->whereKey($activity->getKey())->lockForUpdate()->firstOrFail();
+            abort_if($current->status === 'cancelled', 409, 'กิจกรรมนี้ถูกยกเลิกแล้ว');
+            abort_if($current->isEnded(), 409, 'กิจกรรมนี้จบแล้ว ไม่สามารถลบรูปสถานที่ได้');
+            $path = $current->location_image_path;
+            if ($path && Storage::disk('public')->exists($path) && ! Storage::disk('public')->delete($path)) {
+                return false;
+            }
+            $current->location_image_path = null;
+            $current->save();
+
+            return true;
+        });
+        if (! $deleted) {
+            return response()->json(['message' => 'ลบรูปไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'], 503);
+        }
+
+        return response()->json(['message' => 'ลบรูปสถานที่แล้ว']);
     }
 
     public function cancel(Activity $activity): RedirectResponse

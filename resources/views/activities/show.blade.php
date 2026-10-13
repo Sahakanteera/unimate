@@ -153,7 +153,7 @@
             @endif
 
             {{-- ซ่อนปุ่มตาม Policy; ฝั่ง Controller/FormRequest ยังตรวจสิทธิ์ทุกคำขอด้วย --}}
-            @can('update', $activity)
+            @can('manageRequests', $activity)
                 @if($activity->status !== 'cancelled')
                     <div class="mt-5 space-y-2 border-t border-line pt-5">
                         @if($activity->starts_at->isPast())
@@ -168,8 +168,19 @@
                                 <span class="badge-count bg-sun text-night">{{ $pendingCount }}</span>
                             @endif
                         </a>
-                        <a href="{{ route('activities.edit', $activity) }}" class="btn btn-secondary w-full"><x-ui.icon name="pencil" class="h-4 w-4" /> แก้ไขกิจกรรม</a>
-                        <form method="POST" action="{{ route('activities.cancel', $activity) }}" onsubmit="return confirm('ยืนยันยกเลิกกิจกรรม? เมื่อยกเลิกแล้วจะไม่สามารถแก้ไขได้')">@csrf @method('PATCH')<button class="btn btn-ghost w-full text-bad hover:bg-bad-soft hover:text-bad">ยกเลิกกิจกรรม</button></form>
+                        @can('update', $activity)
+                            <a href="{{ route('activities.edit', $activity) }}" class="btn btn-secondary w-full"><x-ui.icon name="pencil" class="h-4 w-4" /> แก้ไขกิจกรรม</a>
+                        @endcan
+                        @can('cancel', $activity)
+                            <form id="cancel-activity-form" method="POST" action="{{ route('activities.cancel', $activity) }}">
+                                @csrf
+                                @method('PATCH')
+                                <button id="open-cancel-activity" class="btn btn-danger w-full"><x-ui.icon name="ban" class="h-4 w-4" /> ยกเลิกกิจกรรม</button>
+                            </form>
+                        @endcan
+                        @if($isEnded)
+                            <p class="flex items-start gap-2 rounded-tile bg-canvas p-3 text-sm text-ink-muted"><x-ui.icon name="lock" class="mt-0.5 h-4 w-4" /> กิจกรรมจบแล้ว จึงล็อกการแก้ไขรายละเอียดและการยกเลิก</p>
+                        @endif
                     </div>
                 @endif
             @else
@@ -344,9 +355,15 @@
         @endif
     </div>
 </div>
+@if($isOwner && ! $isCancelled && ! $isEnded)
+    @include('activities.partials.cancel-activity-dialog')
+@endif
 @endsection
 
 @section('scripts')
+@if($isOwner && ! $isCancelled && ! $isEnded)
+    <script src="{{ asset('js/activity-cancel.js') }}" defer></script>
+@endif
 <script>
     // ไฮไลต์แท็บตามส่วนที่กำลังอ่านอยู่: ส่วนสุดท้ายที่หัวข้อเลื่อนผ่านเส้น 40% ของจอ (ค่าเริ่มต้นคือแท็บแรก)
     (() => {

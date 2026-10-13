@@ -37,6 +37,7 @@ Route::middleware('guest')->group(function () {
 
 Route::middleware(['auth', 'active'])->group(function () {
     Route::resource('activities', ActivityController::class)->except('destroy');
+    Route::delete('/activities/{activity}/location-image', [ActivityController::class, 'deleteLocationImage'])->name('activities.location-image.destroy');
     Route::patch('/activities/{activity}/cancel', [ActivityController::class, 'cancel'])->name('activities.cancel');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
