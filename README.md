@@ -379,3 +379,13 @@ php artisan test tests/Feature/ActivitiesTest.php
 ```bash
 php artisan db:seed --class=AdminInsightsDemoSeeder
 ```
+
+## ข้อมูลเดโมสำหรับนำเสนอ
+
+รันคำสั่งเดียว (ลบข้อมูลเดิมทั้งหมด แล้วสร้างข้อมูลครบทุกระบบ ทุกบัญชีใช้รหัสผ่าน `password`)
+
+```bash
+php artisan migrate:fresh --seed --seeder=PresentationDemoSeeder
+```
+
+บัญชีเดโมและบทเดโมทีละระบบอยู่ใน [คู่มือข้อมูลเดโม](docs/demo-guide-th.md) เวลาของกิจกรรมอิงกับเวลาที่รัน จึงควรรันใหม่ในวันนำเสนอ
